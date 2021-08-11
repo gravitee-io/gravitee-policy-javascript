@@ -1,0 +1,107 @@
+{
+  "type" : "object",
+  "id" : "urn:jsonschema:io:gravitee:policy:javascript:configuration:JavascriptPolicyConfiguration",
+  "properties" : {
+    "scope" : {
+      "title": "Scope",
+      "type" : "string",
+      "default": "REQUEST",
+      "enum" : [ "REQUEST", "RESPONSE"],
+      "x-schema-form": {
+        "hidden": true
+      }
+    },
+    "onRequestScript" : {
+      "title": "On-request script",
+      "description": "Javascript script to evaluate during the OnRequest phase.",
+      "type" : "string",
+      "x-schema-form": {
+        "type": "codemirror",
+        "codemirrorOptions": {
+          "placeholder": "Put your javascript script here or drag'n'drop javascript script",
+          "lineWrapping": true,
+          "lineNumbers": true,
+          "allowDropFileTypes": true,
+          "autoCloseTags": true,
+          "mode": "javascript"
+        },
+        "hidden": [
+          {
+            "$eq": {
+              "scope": "RESPONSE"
+            }
+          }
+        ]
+      }
+    },
+    "onResponseScript" : {
+      "title": "On-response script",
+      "description": "Javascript script to evaluate during the OnResponse phase.",
+      "type" : "string",
+      "x-schema-form": {
+        "type": "codemirror",
+        "codemirrorOptions": {
+          "placeholder": "Put your javascript script here or drag'n'drop javascript script",
+          "lineWrapping": true,
+          "lineNumbers": true,
+          "allowDropFileTypes": true,
+          "autoCloseTags": true,
+          "mode": "javascript"
+        },
+        "hidden": [
+          {
+            "$eq": {
+              "scope": "REQUEST"
+            }
+          }
+        ]
+      }
+    },
+    "onRequestContentScript" : {
+      "title": "On-request content script",
+      "description": "Javascript script to evaluate during the 'request-content' phase. <br> Useful to transform request content",
+      "type" : "string",
+      "x-schema-form": {
+        "type": "codemirror",
+        "codemirrorOptions": {
+          "placeholder": "Put your javascript script here or drag'n'drop javascript script",
+          "lineWrapping": true,
+          "lineNumbers": true,
+          "allowDropFileTypes": true,
+          "autoCloseTags": true,
+          "mode": "javascript"
+        },
+        "hidden": [
+          {
+            "$eq": {
+              "scope": "RESPONSE"
+            }
+          }
+        ]
+      }
+    },
+    "onResponseContentScript" : {
+      "title": "On-response content script",
+      "description": "Javascript script to evaluate during the 'response-content' phase. <br> Useful to transform response content",
+      "type" : "string",
+      "x-schema-form": {
+        "type": "codemirror",
+        "codemirrorOptions": {
+          "placeholder": "Put your javascript script here or drag'n'drop javascript script",
+          "lineWrapping": true,
+          "lineNumbers": true,
+          "allowDropFileTypes": true,
+          "autoCloseTags": true,
+          "mode": "javascript"
+        },
+        "hidden": [
+          {
+            "$eq": {
+              "scope": "REQUEST"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
