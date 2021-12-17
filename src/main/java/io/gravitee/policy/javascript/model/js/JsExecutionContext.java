@@ -15,11 +15,7 @@
  */
 package io.gravitee.policy.javascript.model.js;
 
-import io.gravitee.el.TemplateEngine;
 import io.gravitee.gateway.api.ExecutionContext;
-import io.gravitee.gateway.api.Request;
-import io.gravitee.gateway.api.Response;
-import java.util.Enumeration;
 import java.util.Map;
 
 /**

@@ -17,8 +17,6 @@ package io.gravitee.policy.javascript.model.js;
 
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.gateway.api.Response;
-import io.gravitee.gateway.api.buffer.Buffer;
-import io.gravitee.gateway.api.stream.WriteStream;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)

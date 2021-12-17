@@ -15,9 +15,7 @@
  */
 package io.gravitee.policy.javascript.model.js;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.vertx.core.MultiMap;
-import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)

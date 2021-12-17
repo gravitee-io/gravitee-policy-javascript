@@ -15,10 +15,7 @@
  */
 package io.gravitee.policy.javascript.model.js;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.vertx.core.MultiMap;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 
