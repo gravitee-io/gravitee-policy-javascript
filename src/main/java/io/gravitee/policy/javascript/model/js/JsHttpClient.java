@@ -21,8 +21,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;

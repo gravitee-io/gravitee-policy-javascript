@@ -25,7 +25,6 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import org.springframework.core.env.Environment;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
@@ -35,12 +34,12 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
 
     public static HttpClient HTTP_CLIENT;
     public static ScriptEngine JAVASCRIPT_ENGINE;
-    private Vertx vertx;
+    private static Boolean initialized = false;
+    private static Vertx vertx;
 
     @Override
     public void onActivation() throws Exception {
         initJavascriptEngine();
-        initHttpClient();
     }
 
     @Override
@@ -48,27 +47,41 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
 
     @Override
     public void setPolicyContextProvider(PolicyContextProvider policyContextProvider) {
-        this.vertx = policyContextProvider.getComponent(Vertx.class);
+        setContext(policyContextProvider);
     }
 
-    private void initJavascriptEngine() {
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        JAVASCRIPT_ENGINE =
-            factory.getScriptEngine(
-                new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
-                this.getClass().getClassLoader(),
-                className -> false
-            );
-
-        final Bindings bd = JAVASCRIPT_ENGINE.getBindings(ScriptContext.ENGINE_SCOPE);
-        bd.remove("load");
-        bd.remove("loadWithNewGlobal");
-        bd.remove("exit");
-        bd.remove("eval");
-        bd.remove("quit");
+    private static synchronized void setContext(PolicyContextProvider policyContextProvider) {
+        if (!initialized) {
+            vertx = policyContextProvider.getComponent(Vertx.class);
+        }
     }
 
-    private void initHttpClient() {
+    private static synchronized void initJavascriptEngine() {
+        if (!initialized) {
+            NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+            JAVASCRIPT_ENGINE =
+                factory.getScriptEngine(
+                    new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
+                    JavascriptInitializer.class.getClassLoader(),
+                    className -> false
+                );
+
+            final Bindings bd = JAVASCRIPT_ENGINE.getBindings(ScriptContext.ENGINE_SCOPE);
+            bd.remove("load");
+            bd.remove("loadWithNewGlobal");
+            bd.remove("exit");
+            bd.remove("eval");
+            bd.remove("quit");
+
+            initHttpClient();
+            initialized = true;
+        }
+    }
+
+    /**
+     * @deprecated we should remove the use of httpclient inside javascript and exclusively rely on EndpointCalloutPolicy or dynamically add an EndpointInvoker in the script context.
+     */
+    private static void initHttpClient() {
         if (vertx != null) {
             final HttpClientOptions options = new HttpClientOptions()
                 .setTrustAll(true)
