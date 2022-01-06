@@ -15,11 +15,11 @@
  */
 package io.gravitee.policy.javascript.model.js;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpVersion;
 import io.gravitee.common.util.MultiValueMap;
 import io.gravitee.gateway.api.Request;
+import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.reporter.api.http.Metrics;
 import javax.net.ssl.SSLSession;
 
