@@ -16,7 +16,6 @@
 package io.gravitee.policy.javascript;
 
 import static io.gravitee.policy.javascript.JavascriptInitializer.JAVASCRIPT_ENGINE;
-import static javax.script.ScriptEngine.ENGINE;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -24,15 +23,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.never;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
 import io.gravitee.gateway.api.buffer.Buffer;
+import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.stream.ReadWriteStream;
 import io.gravitee.policy.api.PolicyChain;
-import io.gravitee.policy.api.PolicyContextProvider;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
 import io.gravitee.reporter.api.http.Metrics;
@@ -122,7 +120,7 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldModifyResponseHeaders() throws Exception {
-        HttpHeaders headers = spy(new HttpHeaders());
+        HttpHeaders headers = spy(HttpHeaders.create());
         when(response.headers()).thenReturn(headers);
         when(configuration.getOnRequestScript()).thenReturn(loadResource("modify_response_headers.js"));
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
@@ -153,7 +151,7 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldNotBreakRequest() throws Exception {
-        HttpHeaders headers = spy(new HttpHeaders());
+        HttpHeaders headers = spy(HttpHeaders.create());
         when(request.headers()).thenReturn(headers);
 
         when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
@@ -169,7 +167,7 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldBreakRequest() throws Exception {
-        HttpHeaders headers = spy(new HttpHeaders());
+        HttpHeaders headers = spy(HttpHeaders.create());
         when(request.headers()).thenReturn(headers);
         when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
 
@@ -188,7 +186,7 @@ public class JavascriptPolicyTest {
 
     @Test
     public void shouldReadJson() throws Exception {
-        HttpHeaders headers = spy(new HttpHeaders());
+        HttpHeaders headers = spy(HttpHeaders.create());
         when(request.headers()).thenReturn(headers);
 
         when(configuration.getOnRequestContentScript()).thenReturn(loadResource("read_json.js"));

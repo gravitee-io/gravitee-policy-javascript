@@ -257,12 +257,13 @@ public class JavascriptPolicy {
     }
 
     private String eval(String script, ScriptContext scriptContext) throws ScriptException, ExecutionException, InterruptedException {
-        String content = (String) JAVASCRIPT_ENGINE.eval(script, scriptContext);
+        Object ret = JAVASCRIPT_ENGINE.eval(script, scriptContext);
+
         final JsHttpClient httpClient = (JsHttpClient) scriptContext.getAttribute("httpClient");
         httpClient.shutDown();
 
         // Note: here we can do scriptContext.getWriter().toString() if we want to retrieve the printed logs but we won't display them in the gateway logs for now.
-        return content;
+        return (ret instanceof String) ? (String) ret : null;
     }
 
     private static class PolicyFailureException extends Exception {
