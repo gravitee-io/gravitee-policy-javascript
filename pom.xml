@@ -43,7 +43,7 @@
         <javascript-sandbox.version>1.27</javascript-sandbox.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <maven-assembly-plugin.version>2.5.5</maven-assembly-plugin.version>
-        <asm.version>9.1</asm.version>
+        <asm.version>9.2</asm.version>
     </properties>
 
     <dependencyManagement>
@@ -55,6 +55,28 @@
                 <version>${gravitee-bom.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+
+            <!-- Force upgrade of asm to be aligned with asm version coming from gravitee -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-util</artifactId>
+                <version>${asm.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -143,14 +165,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Force upgrade of asm to be aligned with asm version coming from gravitee -->
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>${asm.version}</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 
