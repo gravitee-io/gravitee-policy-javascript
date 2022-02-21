@@ -24,6 +24,8 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.never;
 
 import io.gravitee.common.http.HttpStatusCode;
+import io.gravitee.common.util.LinkedMultiValueMap;
+import io.gravitee.common.util.MultiValueMap;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.Response;
@@ -35,6 +37,7 @@ import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
 import io.gravitee.reporter.api.http.Metrics;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.future.PromiseImpl;
@@ -115,6 +118,45 @@ public class JavascriptPolicyTest {
         verify(policyChain, times(1)).failWith(any(io.gravitee.policy.api.PolicyResult.class));
     }
 
+    @Test
+    public void shouldIterateOverHeaders() {
+        HttpHeaders requestHeaders = HttpHeaders.create();
+        requestHeaders.set("A", "AValue");
+        requestHeaders.set("B", "BValue");
+        requestHeaders.set("C", "CValue");
+
+        HttpHeaders responseHeaders = HttpHeaders.create();
+
+        String script = "request.headers.forEach(function(v) { response.headers.set(v.key, v.value); });";
+
+        when(request.headers()).thenReturn(requestHeaders);
+        when(response.headers()).thenReturn(responseHeaders);
+        when(configuration.getOnRequestScript()).thenReturn(script);
+        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+        requestHeaders.forEach(entry -> assertEquals(requestHeaders.get(entry.getKey()), responseHeaders.get(entry.getKey())));
+        verify(policyChain, times(1)).doNext(request, response);
+    }
+
+    @Test
+    public void shouldIterateOverParameters() {
+        MultiValueMap<String, String> multiMap = new LinkedMultiValueMap<>();
+        multiMap.add("A", "AValue");
+        multiMap.add("B", "BValue");
+        multiMap.add("C", "CValue");
+
+        HttpHeaders responseHeaders = HttpHeaders.create();
+
+        String script = "request.parameters.keySet().forEach(function(v) { response.headers.set(v, request.parameters.getFirst(v)); });";
+
+        when(request.parameters()).thenReturn(multiMap);
+        when(response.headers()).thenReturn(responseHeaders);
+        when(configuration.getOnRequestScript()).thenReturn(script);
+        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+        verify(policyChain, times(1)).doNext(request, response);
+    }
+
     /**
      * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#description
      */
@@ -182,6 +224,31 @@ public class JavascriptPolicyTest {
                         result.message().equals("Stop request processing due to X-Gravitee-Break header")
                 )
             );
+    }
+
+    @Test
+    public void shouldBreakRequestContent() throws Exception {
+        HttpHeaders headers = spy(HttpHeaders.create());
+        when(request.headers()).thenReturn(headers);
+        when(configuration.getOnRequestContentScript()).thenReturn(loadResource("break_request_content.js"));
+
+        headers.set("X-Gravitee-Break", "value");
+
+        new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
+
+        ReadWriteStream stream = new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
+        stream.end(Buffer.buffer());
+
+        verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
+        verify(policyChain, times(1))
+            .streamFailWith(
+                argThat(
+                    result ->
+                        result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
+                        result.message().equals("Stop request content processing due to X-Gravitee-Break header")
+                )
+            );
+        verify(policyChain, never()).doNext(any(), any());
     }
 
     @Test
