@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/[secure]...1.1.1) (2022-02-21)
+
+
+### Bug Fixes
+
+* allow error on request and response content phases ([#17](https://github.com/gravitee-io/gravitee-policy-javascript/issues/17)) ([d1c6be9](https://github.com/gravitee-io/gravitee-policy-javascript/commit/d1c6be912c03e544e3e6a6b0173a38f2b37f5b33)), closes [gravitee-io/issues#7173](https://github.com/gravitee-io/issues/issues/7173)
+
 # [[secure]](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.0.0...[secure]) (2022-01-24)
 
 
