@@ -243,13 +243,13 @@ public class JavascriptPolicy {
         // And run script
         try {
             content = eval(script, scriptContext);
-
-            if (result.getState() == PolicyResult.State.FAILURE) {
-                throw new PolicyFailureException(result);
-            }
         } catch (Exception e) {
             result.setState(PolicyResult.State.FAILURE);
             result.setError(e.getMessage());
+            throw new PolicyFailureException(result);
+        }
+
+        if (result.getState() == PolicyResult.State.FAILURE) {
             throw new PolicyFailureException(result);
         }
 
