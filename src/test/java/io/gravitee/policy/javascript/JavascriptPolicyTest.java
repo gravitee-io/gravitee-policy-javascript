@@ -319,6 +319,19 @@ public class JavascriptPolicyTest {
         fail("a should be undefined and it should raise an ScriptException");
     }
 
+    @Test
+    public void shouldUseES6() throws Exception {
+        final Map<String, Object> attributes = new HashMap<>();
+        when(executionContext.getAttributes()).thenReturn(attributes);
+
+        when(configuration.getOnRequestScript()).thenReturn(loadResource("use_es6.js"));
+        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+        assertEquals(3, attributes.get("length"));
+        assertEquals(true, attributes.get("includeA"));
+        verify(policyChain, times(1)).doNext(request, response);
+    }
+
     private String loadResource(String resource) throws IOException {
         InputStream stream = JavascriptPolicy.class.getResourceAsStream(resource);
         return readInputStreamToString(stream, Charset.defaultCharset());
