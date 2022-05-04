@@ -1,4 +1,4 @@
-= Javascript policy
+= JavaScript policy
 
 ifdef::env-github[]
 image:https://img.shields.io/static/v1?label=Available%20at&message=Gravitee.io&color=1EC9D2["Gravitee.io", link="https://download.gravitee.io/#graviteeio-apim/plugins/policies/gravitee-policy-javascript/"]
@@ -16,9 +16,9 @@ endif::[]
 
 == Description
 
-You can use the http://www.javascript.com/[Javascript^] policy to run Javascript scripts at any stage of request processing through the gateway.
+You can use the http://www.javascript.com/[JavaScript^] policy to run JavaScript scripts at any stage of request processing through the gateway.
 
-The following example Javascript script is executed during the OnResponse phase to change HTTP headers:
+The following example JavaScript script is executed during the OnResponse phase to change HTTP headers:
 
 [source, javascript]
 ----
@@ -40,7 +40,7 @@ response.headers.set('X-Gravitee-Gateway-Version', '0.14.0');
 
 === onRequest / onResponse
 
-Some variables are automatically bound to the Javascript script to allow users to use them and define the policy behavior.
+Some variables are automatically bound to the JavaScript script to allow users to use them and define the policy behavior.
 
 [width="100%",cols="2,10",options="header"]
 .List of javascript script variables
@@ -50,7 +50,7 @@ Some variables are automatically bound to the Javascript script to allow users t
 | `request` | Inbound HTTP request
 | `response` | Outbound HTTP response
 | `context` | `PolicyContext` used to access external components such as services and resources
-| `result` | Javascript script result
+| `result` | JavaScript script result
 
 |===
 
@@ -64,7 +64,7 @@ if (request.headers.containsKey('X-Gravitee-Break')) {
     result.code = 500
     result.error = 'Stop request processing due to X-Gravitee-Break header'
 } else {
-    request.headers.set('X-Javascript-Policy', 'ok');
+    request.headers.set('X-JavaScript-Policy', 'ok');
 }
 ----
 
@@ -80,10 +80,12 @@ result.contentType = 'application/json'
 
 === OnRequestContent / OnResponseContent
 
-You can also transform request or response body content by applying a Javascript script on
+You can also transform request or response body content by applying a JavaScript script on
 the `OnRequestContent` phase or the `OnResponseContent` phase.
 
-The following example shows you how to use the Javascript policy to transform JSON content:
+WARNING: When working with scripts on `OnRequestContent` or `OnResponseContent` phase, the last instruction of the script **must be** the new body content that would be returned by the policy.
+
+The following example shows you how to use the JavaScript policy to transform JSON content:
 
 ==== Input body content
 [source, json]
@@ -97,7 +99,7 @@ The following example shows you how to use the Javascript policy to transform JS
 ]
 ----
 
-==== Javascript script
+==== JavaScript script
 [source, javascript]
 ----
 var content = JSON.parse(response.content);
@@ -128,7 +130,7 @@ JSON.stringify(content);
 |Code |Message
 
 | ```500```
-| The Javascript script cannot be parsed/compiled or executed (mainly due to a syntax error)
+| The JavaScript script cannot be parsed/compiled or executed (mainly due to a syntax error)
 
 |===
 
@@ -191,7 +193,7 @@ response.headers.add('TARGET-HEADER-X', 'bar');`
 |Phases are not exactly the same and gravitee does not allow to use a single script on different phases. You must define one script per phase or let the field blank if no script is necessary.
 
 |Timeout
-|`timeLimit` configuration at Javascript policy level
+|`timeLimit` configuration at JavaScript policy level
 |
 |The timeout is not supported for now.
 
