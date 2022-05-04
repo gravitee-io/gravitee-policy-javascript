@@ -61,7 +61,7 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
             NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
             JAVASCRIPT_ENGINE =
                 factory.getScriptEngine(
-                    new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
+                    new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true", "--language=es6" },
                     JavascriptInitializer.class.getClassLoader(),
                     className -> false
                 );
