@@ -38,7 +38,7 @@
         <gravitee-gateway-api.version>1.31.0</gravitee-gateway-api.version>
         <gravitee-gateway-buffer.version>1.18.3</gravitee-gateway-buffer.version>
         <gravitee-policy-api.version>1.9.0</gravitee-policy-api.version>
-        <gravitee-common.version>1.17.2</gravitee-common.version>
+        <gravitee-common.version>1.28.0</gravitee-common.version>
         <javascript.version>2.5.14</javascript.version>
         <javascript-sandbox.version>1.27</javascript-sandbox.version>
         <commons-lang3.version>3.11</commons-lang3.version>
