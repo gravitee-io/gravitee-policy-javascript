@@ -150,7 +150,7 @@ public class JsRequest {
     }
 
     public String scheme() {
-        return request.localAddress();
+        return request.scheme();
     }
 
     public String getScheme() {
