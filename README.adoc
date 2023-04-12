@@ -122,6 +122,20 @@ JSON.stringify(content);
 ]
 ----
 
+=== Dictionaries - Properties
+
+Both Dictionaries (defined at the environment level) and Properties (defined at the API level) can be accessed from the JavaScript script, using:
+
+ - `context.dictionaries()` for Dictionaries
+ - `context.properties()` for Properties
+
+Here is an example of how to set a request header based on a Property:
+
+[source,javascript]
+----
+request.headers.set('X-JavaScript-Policy', context.properties()['KEY_OF_MY_PROPERTY']);
+----
+
 == Errors
 
 === HTTP status code

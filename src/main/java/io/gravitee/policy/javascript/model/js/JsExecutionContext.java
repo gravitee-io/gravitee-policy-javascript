@@ -25,16 +25,29 @@ import java.util.Map;
 public class JsExecutionContext {
 
     private static final String CONTEXT_DICTIONARIES_VARIABLE = "dictionaries";
+    private static final String CONTEXT_PROPERTIES_VARIABLE = "properties";
     private final ExecutionContext context;
 
     public JsExecutionContext(final ExecutionContext context) {
         this.context = context;
     }
 
-    public Map<String, Map<String, String>> getDictionaries() {
+    public Map<String, Map<String, String>> dictionaries() {
         return (Map<String, Map<String, String>>) this.context.getTemplateEngine()
             .getTemplateContext()
             .lookupVariable(CONTEXT_DICTIONARIES_VARIABLE);
+    }
+
+    public Map<String, Map<String, String>> getDictionaries() {
+        return this.dictionaries();
+    }
+
+    public Map<String, String> properties() {
+        return (Map<String, String>) this.context.getTemplateEngine().getTemplateContext().lookupVariable(CONTEXT_PROPERTIES_VARIABLE);
+    }
+
+    public Map<String, String> getProperties() {
+        return this.properties();
     }
 
     public void attribute(String s, Object o) {
