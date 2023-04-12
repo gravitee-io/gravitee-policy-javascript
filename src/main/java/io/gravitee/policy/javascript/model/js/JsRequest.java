@@ -168,4 +168,12 @@ public class JsRequest {
     public Metrics metrics() {
         return request.metrics();
     }
+
+    public String host() {
+        return request.host();
+    }
+
+    public String getHost() {
+        return this.host();
+    }
 }
