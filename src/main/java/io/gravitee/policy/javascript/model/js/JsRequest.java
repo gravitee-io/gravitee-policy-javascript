@@ -169,6 +169,10 @@ public class JsRequest {
         return request.metrics();
     }
 
+    public Metrics getMetrics() {
+        return this.metrics();
+    }
+
     public String host() {
         return request.host();
     }
