@@ -1,3 +1,17 @@
+# [1.2.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.1.1...1.2.0) (2023-04-12)
+
+
+### Bug Fixes
+
+* add `getMetrics` method to be consistent with other fields ([123d585](https://github.com/gravitee-io/gravitee-policy-javascript/commit/123d585489967c4a9eac4da33cc9c8aae8117fcd))
+* fix `scheme` getter that was returning local address instead ([bb10890](https://github.com/gravitee-io/gravitee-policy-javascript/commit/bb1089056ab6974faabea3e9ba2ae9908eb1c921))
+
+
+### Features
+
+* add getter for `host` ([84bc68c](https://github.com/gravitee-io/gravitee-policy-javascript/commit/84bc68cd8aa21bb832b9a08a49a5a3f8c68e71ea))
+* expose `properties` just like it's done for `dictionaries` ([2e4f8fa](https://github.com/gravitee-io/gravitee-policy-javascript/commit/2e4f8faa03d215e0730faba849b1d38754a58a88))
+
 ## [1.1.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/[secure]...1.1.1) (2022-02-21)
 
 
