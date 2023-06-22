@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.2.0...1.2.1) (2023-06-22)
+
+
+### Bug Fixes
+
+* **engine:** Protect the engine property from being deleted ([b0cae0f](https://github.com/gravitee-io/gravitee-policy-javascript/commit/b0cae0fc3c4764809f508689fd7fcfc89e69741b))
+
 # [1.2.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.1.1...1.2.0) (2023-04-12)
 
 
