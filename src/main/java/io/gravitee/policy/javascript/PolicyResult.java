@@ -31,6 +31,16 @@ public class PolicyResult {
 
     private String contentType = null;
 
+    private String key;
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public String getError() {
         return error;
     }

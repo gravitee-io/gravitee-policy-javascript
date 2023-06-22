@@ -30,15 +30,16 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>20.0</version>
+        <version>21.0.0</version>
     </parent>
 
     <properties>
-        <gravitee-bom.version>1.0</gravitee-bom.version>
-        <gravitee-gateway-api.version>1.31.0</gravitee-gateway-api.version>
-        <gravitee-gateway-buffer.version>1.18.3</gravitee-gateway-buffer.version>
-        <gravitee-policy-api.version>1.9.0</gravitee-policy-api.version>
-        <gravitee-common.version>1.17.2</gravitee-common.version>
+        <gravitee-bom.version>3.0.8</gravitee-bom.version>
+        <gravitee-gateway-api.version>1.34.2</gravitee-gateway-api.version>
+        <gravitee-apim.version>3.18.28</gravitee-apim.version>
+        <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
+        <gravitee-common.version>1.27.0</gravitee-common.version>
+        <gravitee-expression-language.version>1.9.7</gravitee-expression-language.version>
         <javascript.version>2.5.14</javascript.version>
         <javascript-sandbox.version>1.27</javascript-sandbox.version>
         <commons-lang3.version>3.11</commons-lang3.version>
@@ -112,6 +113,20 @@
         </dependency>
 
         <dependency>
+            <groupId>io.gravitee.el</groupId>
+            <artifactId>gravitee-expression-language</artifactId>
+            <version>${gravitee-expression-language.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.gravitee.apim.gateway</groupId>
+            <artifactId>gravitee-apim-gateway-buffer</artifactId>
+            <version>${gravitee-apim.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <scope>provided</scope>
@@ -144,9 +159,9 @@
         </dependency>
 
         <dependency>
-            <groupId>io.gravitee.gateway</groupId>
-            <artifactId>gravitee-gateway-buffer</artifactId>
-            <version>${gravitee-gateway-buffer.version}</version>
+            <groupId>io.gravitee.apim.gateway</groupId>
+            <artifactId>gravitee-apim-gateway-tests-sdk</artifactId>
+            <version>${gravitee-apim.version}</version>
             <scope>test</scope>
         </dependency>
 
