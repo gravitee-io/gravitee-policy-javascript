@@ -257,6 +257,9 @@ public class JavascriptPolicy {
     }
 
     private String eval(String script, ScriptContext scriptContext) throws ScriptException, ExecutionException, InterruptedException {
+        // As per https://github.com/javadelight/delight-nashorn-sandbox/issues/73
+        JAVASCRIPT_ENGINE.eval("Object.defineProperty(this, 'engine', {});\n" + "Object.defineProperty(this, 'context', {});");
+        JAVASCRIPT_ENGINE.eval("delete this.__noSuchProperty__;");
         Object ret = JAVASCRIPT_ENGINE.eval(script, scriptContext);
 
         final JsHttpClient httpClient = (JsHttpClient) scriptContext.getAttribute("httpClient");
