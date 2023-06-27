@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.0...1.3.1) (2023-06-27)
+
+
+### Bug Fixes
+
+* add policy result key to readme ([f37613e](https://github.com/gravitee-io/gravitee-policy-javascript/commit/f37613ede529eaa18f39fddcebfc77f4390461ed))
+
 # [1.3.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.2.1...1.3.0) (2023-06-27)
 
 
