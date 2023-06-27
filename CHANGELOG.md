@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.2.1...1.3.0) (2023-06-27)
+
+
+### Features
+
+* allow to add response template key in policy result ([b0ffc3a](https://github.com/gravitee-io/gravitee-policy-javascript/commit/b0ffc3a2988376d1e2810e5693eff2bab4ac6666))
+
 ## [1.2.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.2.0...1.2.1) (2023-06-22)
 
 
