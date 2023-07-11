@@ -257,7 +257,12 @@ public class JavascriptPolicy {
     }
 
     private String eval(String script, ScriptContext scriptContext) throws ScriptException, ExecutionException, InterruptedException {
-        Object ret = JAVASCRIPT_ENGINE.eval(script, scriptContext);
+
+        // see https://github.com/javadelight/delight-nashorn-sandbox/issues/73
+        final String blockAccessToEngine = "Object.defineProperty(this, 'engine', {});"
+                + "Object.defineProperty(this, 'context', {});delete this.__noSuchProperty__;";
+
+        Object ret = JAVASCRIPT_ENGINE.eval(blockAccessToEngine + script, scriptContext);
 
         final JsHttpClient httpClient = (JsHttpClient) scriptContext.getAttribute("httpClient");
         httpClient.shutDown();
@@ -281,7 +286,8 @@ public class JavascriptPolicy {
 
     private ScriptContext createScriptContext(JsRequest request, JsResponse response, JsExecutionContext executionContext) {
         // Prepare binding
-        Bindings bindings = new SimpleBindings();
+        Bindings bindings = JAVASCRIPT_ENGINE.createBindings(); //new SimpleBindings();
+        sanitizeBindings(bindings);
         bindings.put(REQUEST_VARIABLE_NAME, request);
         bindings.put(RESPONSE_VARIABLE_NAME, response);
         bindings.put(CONTEXT_VARIABLE_NAME, executionContext);
@@ -300,5 +306,16 @@ public class JavascriptPolicy {
         scriptContext.setErrorWriter(errorWriter);
 
         return scriptContext;
+    }
+
+    protected void sanitizeBindings(Bindings bindings) {
+        bindings.remove("quit");
+        bindings.remove("exit");
+        bindings.remove("print");
+        bindings.remove("echo");
+        bindings.remove("readFully");
+        bindings.remove("readLine");
+        bindings.remove("load");
+        bindings.remove("loadWithNewGlobal");
     }
 }

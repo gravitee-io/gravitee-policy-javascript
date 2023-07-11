@@ -21,10 +21,9 @@ import io.gravitee.policy.api.PolicyContextProviderAware;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
+
+import javax.script.*;
+
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 /**
@@ -73,14 +72,6 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
             bd.remove("exit");
             bd.remove("eval");
             bd.remove("quit");
-
-            // As per https://github.com/javadelight/delight-nashorn-sandbox/issues/73
-            try {
-                JAVASCRIPT_ENGINE.eval("Object.defineProperty(this, 'engine', {});\n" + "Object.defineProperty(this, 'context', {});");
-                JAVASCRIPT_ENGINE.eval("delete this.__noSuchProperty__;");
-            } catch (ScriptException e) {
-                throw new RuntimeException(e);
-            }
 
             initHttpClient();
             initialized = true;
