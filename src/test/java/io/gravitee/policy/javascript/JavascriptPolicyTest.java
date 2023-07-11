@@ -15,6 +15,8 @@
  */
 package io.gravitee.policy.javascript;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.gravitee.policy.javascript.JavascriptInitializer.JAVASCRIPT_ENGINE;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.never;
 
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.LinkedMultiValueMap;
 import io.gravitee.common.util.MultiValueMap;
@@ -37,23 +40,15 @@ import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
 import io.gravitee.reporter.api.http.Metrics;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.future.PromiseImpl;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.script.ScriptContext;
-import javax.script.ScriptException;
-import javax.script.SimpleScriptContext;
-import jdk.dynalink.beans.StaticClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import javax.script.*;
+import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -80,6 +75,9 @@ public class JavascriptPolicyTest {
 
     @Mock
     private Vertx vertx;
+
+    @ClassRule
+    public static WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     @BeforeClass
     public static void globalInit() throws Exception {
@@ -319,11 +317,24 @@ public class JavascriptPolicyTest {
         fail("a should be undefined and it should raise an ScriptException");
     }
 
-    @Test(expected = ScriptException.class)
-    public void engineNotAllowed() throws ScriptException {
-        String script =
-            "delete this.engine; this.engine.factory.scriptEngine.compile('var Run = Java.type(\\\"java.lang.Runtime\\\"); Run.getRuntime().exec(\\\"curl http://localhost:8082/\\\");').eval()";
-        JAVASCRIPT_ENGINE.eval(script);
+    @Test
+    public void canCreateEngine() throws Exception {
+        final int port = wireMockRule.port();
+        final String path = "/unreachable";
+        stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
+
+        HttpHeaders headers = spy(HttpHeaders.create());
+        when(response.headers()).thenReturn(headers);
+        when(configuration.getOnRequestScript())
+            .thenReturn(
+                "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl http://localhost:" +
+                port +
+                path +
+                " \\\");\");"
+            );
+        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+        verify(0, getRequestedFor(urlEqualTo(path)));
     }
 
     private String loadResource(String resource) throws IOException {
