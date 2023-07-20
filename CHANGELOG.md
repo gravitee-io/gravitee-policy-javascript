@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.2...1.3.3) (2023-07-20)
+
+
+### Bug Fixes
+
+* update policy description ([e055cc5](https://github.com/gravitee-io/gravitee-policy-javascript/commit/e055cc5ba4b79be5ffd94875270feef1ed6eb4b8))
+
 ## [1.3.2](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.1...1.3.2) (2023-07-11)
 
 
