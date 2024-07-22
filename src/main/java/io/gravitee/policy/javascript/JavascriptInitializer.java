@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,10 @@ import io.gravitee.policy.api.PolicyContextProviderAware;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import javax.script.*;
-import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
@@ -56,20 +58,18 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
 
     private static synchronized void initJavascriptEngine() {
         if (!initialized) {
-            NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-            JAVASCRIPT_ENGINE =
-                factory.getScriptEngine(
-                    new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
-                    JavascriptInitializer.class.getClassLoader(),
-                    className -> false
-                );
-
-            final Bindings bd = JAVASCRIPT_ENGINE.getBindings(ScriptContext.ENGINE_SCOPE);
-            bd.remove("load");
-            bd.remove("loadWithNewGlobal");
-            bd.remove("exit");
-            bd.remove("eval");
-            bd.remove("quit");
+            System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+            System.setProperty("polyglot.js.nashorn-compat", "true");
+            System.setProperty("polyglot.js.strict", "true");
+            System.setProperty("polyglot.js.ecmascript-version", "latest");
+            JAVASCRIPT_ENGINE = new ScriptEngineManager().getEngineByName("js");
+            final Bindings bindings = JAVASCRIPT_ENGINE.getBindings(ScriptContext.ENGINE_SCOPE);
+            bindings.put("polyglot.js.allowAllAccess", false);
+            bindings.remove("load");
+            bindings.remove("loadWithNewGlobal");
+            bindings.remove("exit");
+            bindings.remove("eval");
+            bindings.remove("quit");
 
             initHttpClient();
             initialized = true;

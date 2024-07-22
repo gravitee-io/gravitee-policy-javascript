@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,16 +15,27 @@
  */
 package io.gravitee.policy.javascript;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.gravitee.policy.javascript.JavascriptInitializer.JAVASCRIPT_ENGINE;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.LinkedMultiValueMap;
@@ -43,19 +54,29 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.future.PromiseImpl;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import javax.script.*;
-import org.junit.*;
+import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
+@ExtendWith(MockitoExtension.class)
 public class JavascriptPolicyTest {
 
     @Mock
@@ -76,18 +97,18 @@ public class JavascriptPolicyTest {
     @Mock
     private Vertx vertx;
 
-    @ClassRule
-    public static WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+    public static WireMockServer wiremock;
 
-    @BeforeClass
+    @BeforeAll
     public static void globalInit() throws Exception {
         final JavascriptInitializer javascriptInitializer = new JavascriptInitializer();
         javascriptInitializer.onActivation();
+        wiremock = new WireMockServer(wireMockConfig().dynamicPort());
+        wiremock.start();
     }
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
 
         final JavascriptInitializer javascriptInitializer = new JavascriptInitializer();
@@ -132,7 +153,7 @@ public class JavascriptPolicyTest {
         when(configuration.getOnRequestScript()).thenReturn(script);
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
 
-        requestHeaders.forEach(entry -> assertEquals(requestHeaders.get(entry.getKey()), responseHeaders.get(entry.getKey())));
+        requestHeaders.forEach(entry -> assertThat(entry.getValue()).isEqualTo(responseHeaders.get(entry.getKey())));
         verify(policyChain, times(1)).doNext(request, response);
     }
 
@@ -165,8 +186,8 @@ public class JavascriptPolicyTest {
         when(configuration.getOnRequestScript()).thenReturn(loadResource("modify_response_headers.js"));
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
 
-        verify(headers, times(1)).remove(eq("X-Powered-By"));
-        verify(headers, times(1)).set(eq("X-Gravitee-Gateway-Version"), eq("0.14.0"));
+        verify(headers, times(1)).remove("X-Powered-By");
+        verify(headers, times(1)).set("X-Gravitee-Gateway-Version", "0.14.0");
         verify(policyChain, times(1)).doNext(request, response);
     }
 
@@ -181,7 +202,7 @@ public class JavascriptPolicyTest {
         when(configuration.getOnRequestScript()).thenReturn(loadResource("set_context_attribute.js"));
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
 
-        assertEquals(0, attributes.get("anyKey"));
+        assertThat(attributes.get("anyKey")).isEqualTo(0);
         verify(policyChain, times(1)).doNext(request, response);
     }
 
@@ -191,14 +212,15 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldNotBreakRequest() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
+        HttpHeaders headers = HttpHeaders.create();
         when(request.headers()).thenReturn(headers);
 
         when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
 
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-        verify(headers, times(1)).set(eq("X-Groovy-Policy"), eq("ok"));
         verify(policyChain, times(1)).doNext(request, response);
+        assertThat(headers.containsKey("X-Groovy-Policy")).isTrue();
+        assertThat(headers.get("X-Groovy-Policy")).isEqualTo("ok");
     }
 
     /**
@@ -265,61 +287,59 @@ public class JavascriptPolicyTest {
         verify(policyChain, never()).doNext(any(), any());
     }
 
-    @Test(expected = ScriptException.class)
-    public void javaClassNotAllowed() throws ScriptException {
+    @Test
+    public void javaClassNotAllowed() {
         String script = "var system = Java.type('java.lang.System')";
 
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
-    public void systemExitNotAllowed() throws ScriptException {
+    @Test
+    public void systemExitNotAllowed() {
         String script = "exit(1);";
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
-    public void evalNotAllowed() throws ScriptException {
+    @Test
+    public void evalNotAllowed() {
         String script = "eval('1 + 2')";
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
-    public void loadNotAllowed() throws ScriptException {
+    @Test
+    public void loadNotAllowed() {
         String script = "load('lib.js');";
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
-    public void loadWithNewGlobalNotAllowed() throws ScriptException {
+    @Test
+    public void loadWithNewGlobalNotAllowed() {
         String script = new StringBuilder("var script = 'var i = 0;';")
             .append("function addition() {")
             .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
             .append("}")
             .append("addition();")
             .toString();
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
-    public void quitNotAllowed() throws ScriptException {
+    @Test
+    public void quitNotAllowed() {
         String script = "quit();";
-        JAVASCRIPT_ENGINE.eval(script);
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
     }
 
-    @Test(expected = ScriptException.class)
+    @Test
     public void independentExecutions() throws ScriptException {
         String script1 = "var a = 1";
         String script2 = "a";
         JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
-        JAVASCRIPT_ENGINE.eval(script2, new SimpleScriptContext());
-
-        fail("a should be undefined and it should raise an ScriptException");
+        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script2)).isInstanceOf(ScriptException.class);
     }
 
     @Test
     public void canCreateEngine() throws Exception {
-        final int port = wireMockRule.port();
+        final int port = wiremock.port();
         final String path = "/unreachable";
         stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
 
