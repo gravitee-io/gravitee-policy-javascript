@@ -9,7 +9,8 @@
       "enum" : [ "REQUEST", "RESPONSE"],
       "x-schema-form": {
         "hidden": true
-      }
+      },
+      "deprecated": true
     },
     "onRequestScript" : {
       "title": "On-request script",
@@ -32,6 +33,13 @@
             }
           }
         ]
+      },
+      "gioConfig": {
+        "displayIf": {
+          "$eq": {
+            "context.flowPhase": ["REQUEST"]
+          }
+        }
       }
     },
     "onResponseScript" : {
@@ -55,6 +63,13 @@
             }
           }
         ]
+      },
+      "gioConfig": {
+        "displayIf": {
+          "$eq": {
+            "context.flowPhase": ["RESPONSE"]
+          }
+        }
       }
     },
     "onRequestContentScript" : {
@@ -78,7 +93,8 @@
             }
           }
         ]
-      }
+      },
+      "deprecated": true
     },
     "onResponseContentScript" : {
       "title": "On-response content script",
@@ -101,7 +117,8 @@
             }
           }
         ]
-      }
+      },
+      "deprecated": true
     }
   }
 }
