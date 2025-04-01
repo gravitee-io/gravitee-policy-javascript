@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.3...1.4.0) (2025-04-01)
+
+
+### Features
+
+* enable policy for v4 proxy API ([f85cabf](https://github.com/gravitee-io/gravitee-policy-javascript/commit/f85cabf3fed61aa74ff680b0a3abe2bed80c3506))
+
 ## [1.3.3](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.2...1.3.3) (2023-07-20)
 
 
