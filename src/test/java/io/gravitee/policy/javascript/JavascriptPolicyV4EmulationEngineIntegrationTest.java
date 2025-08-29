@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.javascript.model.js;
+package io.gravitee.policy.javascript;
 
-import io.vertx.core.MultiMap;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
+import io.gravitee.definition.model.ExecutionMode;
+import io.gravitee.policy.v3.javascript.JavascriptPolicyIntegrationTest;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
 
-/**
- * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
- * @author GraviteeSource Team
- */
-@Data
-@NoArgsConstructor
-public class JsClientResponse {
-
-    private int status;
-    private String body;
-    private MultiMap headers;
-}
+@GatewayTest(v2ExecutionMode = ExecutionMode.V4_EMULATION_ENGINE)
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+public class JavascriptPolicyV4EmulationEngineIntegrationTest extends JavascriptPolicyIntegrationTest {}

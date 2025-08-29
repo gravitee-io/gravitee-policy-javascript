@@ -32,7 +32,7 @@
           "enabled": true,
           "policy": "javascript",
           "configuration": {
-            "onRequestScript": "if (request.headers.containsKey('X-Gravitee-Break')) {\n response.headers.set('X-Javascript-Policy', 'ko');\n result.state = State.FAILURE;\n result.code = 500;\n result.key = 'DEFAULT';\n result.error = 'Error message';\n result.contentType = 'application/xml';\n } else {\n response.headers.set('X-Groovy-Policy', 'ok');\n }"
+            "onRequestScript": "if (request.headers.containsKey('X-Gravitee-Break')) {\n response.headers.set('X-Javascript-Policy', 'ko');\n result.state = State.FAILURE;\n result.code = 500;\n result.key = 'DEFAULT';\n result.error = 'Error message';\n result.contentType = 'application/xml';\n } else {\n response.headers.set('X-Javascript-Policy', 'ok');\n }"
           }
         }
       ],

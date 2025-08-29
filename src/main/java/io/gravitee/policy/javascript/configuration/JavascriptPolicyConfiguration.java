@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,13 +15,24 @@
  */
 package io.gravitee.policy.javascript.configuration;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.gravitee.policy.api.PolicyConfiguration;
+import java.util.List;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
 public class JavascriptPolicyConfiguration implements PolicyConfiguration {
+
+    private boolean readContent;
+
+    private boolean overrideContent;
+
+    private String script;
 
     private String onRequestScript;
 
@@ -30,6 +41,40 @@ public class JavascriptPolicyConfiguration implements PolicyConfiguration {
     private String onResponseContentScript;
 
     private String onRequestContentScript;
+
+    public boolean isReadContent() {
+        return readContent;
+    }
+
+    public void setReadContent(boolean readContent) {
+        this.readContent = readContent;
+    }
+
+    /**
+     * This getter is overridden for backward compatibility.
+     *
+     * For v3 API, we assume that the policy will override the content if the script is an on{PHASE}Content script,
+     * where {PHASE} can be either Request or Response.
+     *
+     * For v4 API, overriding content is an explicit configuration property.
+     *
+     * @return whether the policy should override the content or not
+     */
+    public boolean isOverrideContent() {
+        return overrideContent || isNotBlank(onRequestContentScript) || isNotBlank(onResponseContentScript);
+    }
+
+    public void setOverrideContent(boolean overrideContent) {
+        this.overrideContent = overrideContent;
+    }
+
+    public String getScript() {
+        return script;
+    }
+
+    public void setScript(String script) {
+        this.script = script;
+    }
 
     public String getOnRequestScript() {
         return onRequestScript;
@@ -61,5 +106,25 @@ public class JavascriptPolicyConfiguration implements PolicyConfiguration {
 
     public void setOnRequestContentScript(String onRequestContentScript) {
         this.onRequestContentScript = onRequestContentScript;
+    }
+
+    /**
+     * This getter is used for backward compatibility.
+     *
+     * If `script` is defined, it means that all other scripts are not (this property is not available for v3 API).
+     *
+     * If `script` is not defined, we return either one or both of the on{PHASE} and on{PHASE}Content
+     * scripts, where {PHASE} can be either Request or Response.
+     *
+     * When running both  on${PHASE} and on${PHASE}Content scrips, the order ensures
+     * that overriding the content will be done using the on${PHASE}Content script.
+     *
+     * @return the list of scripts to run for a v3 API, a singleton list with the script for a v4 API.
+     */
+    public List<String> getScripts() {
+        return Stream
+            .of(script, onRequestScript, onRequestContentScript, onResponseScript, onResponseContentScript)
+            .filter(StringUtils::isNotBlank)
+            .toList();
     }
 }

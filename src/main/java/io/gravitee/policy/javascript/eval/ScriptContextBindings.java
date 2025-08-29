@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.javascript.model.js;
+package io.gravitee.policy.javascript.eval;
 
-import io.vertx.core.MultiMap;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public class ScriptContextBindings {
 
-/**
- * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
- * @author GraviteeSource Team
- */
-@Data
-@NoArgsConstructor
-public class JsClientResponse {
-
-    private int status;
-    private String body;
-    private MultiMap headers;
+    public static final String MESSAGE_VARIABLE_NAME = "message";
+    public static final String REQUEST_VARIABLE_NAME = "request";
+    public static final String RESPONSE_VARIABLE_NAME = "response";
+    public static final String CONTEXT_VARIABLE_NAME = "context";
+    public static final String RESULT_VARIABLE_NAME = "result";
+    public static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
+    public static final String REQUEST_CLASS_VARIABLE_NAME = "Request";
+    public static final String STATE_CLASS_VARIABLE_NAME = "State";
 }
