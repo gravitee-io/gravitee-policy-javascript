@@ -1,3 +1,17 @@
+# [2.0.0-alpha.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.4.0...2.0.0-alpha.1) (2025-09-16)
+
+
+### Features
+
+* add v4 messaging support ([#45](https://github.com/gravitee-io/gravitee-policy-javascript/issues/45)) ([6ea67fe](https://github.com/gravitee-io/gravitee-policy-javascript/commit/6ea67fe1e3b441f0ca7bb588355314e4a7be592d))
+
+
+### BREAKING CHANGES
+
+* requires APIM 4.8+
+
+Co-authored-by: Michal Balinski <michal@incubly.com>
+
 # [1.4.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.3...1.4.0) (2025-04-01)
 
 
