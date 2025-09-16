@@ -12,10 +12,42 @@
       },
       "deprecated": true
     },
+    "readContent": {
+      "title": "Read content",
+      "description": "Enable if your script needs to access the content of the HTTP request or response in your script.",
+      "type": "boolean",
+      "x-schema-form": {
+          "hidden": true
+      }
+    },
+    "overrideContent": {
+        "title": "Override content",
+        "description": "Enable to override the content of the request or response with the value returned by your script.",
+        "type": "boolean",
+        "x-schema-form": {
+            "hidden": true
+        }
+    },
+    "script": {
+        "title": "Script",
+        "description": "Javascript script to evaluate.",
+        "type": "string",
+        "format": "gio-code-editor",
+        "x-schema-form": {
+            "hidden": true
+        },
+        "gioConfig": {
+          "banner": {
+            "title": "Script",
+            "text": "For v4 HTTP APIs created with the JavaScript policy (<= 1.4.0), onRequestScript and onResponseScript still run but are deprecated and not available in the UI. Migrate them to the unified script property — see the documentation for guidance."
+          }
+        }
+    },
     "onRequestScript" : {
       "title": "On-request script",
       "description": "Javascript script to evaluate during the OnRequest phase.",
       "type" : "string",
+      "deprecated": true,
       "x-schema-form": {
         "type": "codemirror",
         "codemirrorOptions": {
@@ -46,6 +78,7 @@
       "title": "On-response script",
       "description": "Javascript script to evaluate during the OnResponse phase.",
       "type" : "string",
+      "deprecated": true,
       "x-schema-form": {
         "type": "codemirror",
         "codemirrorOptions": {

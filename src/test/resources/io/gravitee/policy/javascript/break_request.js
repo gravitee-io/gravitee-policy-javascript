@@ -1,7 +1,4 @@
-if (request.headers.containsKey('X-Gravitee-Break')) {
-    result.state = State.FAILURE
-    result.code = 500
-    result.error = 'Stop request processing due to X-Gravitee-Break header'
-} else {
-    request.headers.set('X-Groovy-Policy', 'ok');
-}
+result.state = State.FAILURE;
+result.key = 'JAVASCRIPT_FAILED_ON_PURPOSE';
+result.code = 400;
+result.error = 'Rejected Request';

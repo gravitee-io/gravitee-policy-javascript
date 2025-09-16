@@ -7,59 +7,68 @@ image:https://img.shields.io/badge/semantic--release-conventional%20commits-e100
 image:https://circleci.com/gh/gravitee-io/gravitee-policy-javascript.svg?style=svg["CircleCI", link="https://circleci.com/gh/gravitee-io/gravitee-policy-javascript"]
 endif::[]
 
-== Phase
-
-|===
-|onRequest|onResponse|onRequestContent|onResponseContent
-|X|X|X|X
-|===
-
-== Description
+== Overview
 
 You can use the http://www.javascript.com/[JavaScript^] policy to run JavaScript scripts at any stage of request processing through the gateway.
 
-The following example JavaScript script is executed during the OnResponse phase to change HTTP headers:
+This policy is applicable to the following API types:
 
-[source, javascript]
-----
-response.headers.remove('X-Powered-By');
-response.headers.set('X-Gravitee-Gateway-Version', '0.14.0');
-----
+- v2 APIs
+- v4 HTTP proxy APIs
+- v4 message APIs
 
-== Configuration
+Note: The Javascript policy is not supported by v4 TCP or Native APIs.
 
-[source, json]
-"javascript": {
-    "onRequestScript": "response.headers.remove('X-Powered-By');",
-    "onResponseScript": "response.headers.set('X-Gravitee-Gateway-Version', '0.14.0');",
-    "onRequestContentScript": "" // Not executed if empty
-    "onResponseContentScript": "" // Not executed if empty
-}
+Several variables are automatically bound to the javascript script. These let you read, and potentially modify, their values to define the behavior of the policy.
 
-== Usage and examples
-
-=== onRequest / onResponse
-
-Some variables are automatically bound to the JavaScript script to allow users to use them and define the policy behavior.
-
+=== High level variables
 [width="100%",cols="2,10",options="header"]
-.List of javascript script variables
+.List of high level variables available within the script.
 |===
-| Name | Description
+| Variable   | Description
 
-| `request` | Inbound HTTP request
+| `request`  | Inbound HTTP request
 | `response` | Outbound HTTP response
-| `context` | `PolicyContext` used to access external components such as services and resources
-| `result` | JavaScript script result
+| `message`  | Message transiting the Gateway
+| `context`  | Context usable to access external components such as services and resources
+| `result`   | Object to return to alter the outcome of the request/response
 
 |===
 
-Request or response processing can be interrupted by setting the result state to `FAILURE`.
-By default, it will throw a `500 - internal server error` but you can override this behavior with the following properties:
-- `code`: An HTTP status code
-- `error`: The error message
-- `key`: The key of a response template
+=== Content variables
+[width="100%",cols="2,10",options="header"]
+.List of content specific variables available within the script.
+|===
+| Variable   | Description
 
+| `request.content`  | Inbound request content, available when "Read content" is enabled.
+| `response.content` | Outbound response content, available when "Read content" is enabled.
+| `message.content`  | Message content, always available.
+
+|===
+
+See the "Usage" and "Schema" sections for further explanation regarding available objects, their attributes and methods.
+
+== Usage
+
+=== Change the outcome
+
+To change the outcome, access the `result` object in your script and use the following properties:
+
+[width="100%",,cols="3,3,6",options="header"]
+.List of variables that allows to control the outcome.
+|===
+| Attribute | Type               | Description
+| state     | PolicyResult.State | To indicate a failure
+| code      | integer	         | An HTTP status code
+| error     | string	         | The error message
+| key       | string             | The key of a response template
+
+|===
+
+Setting `state` to `FAILURE`, by default will throw a `500 - internal server error` but you can override this behavior with above properties.
+
+Here is an example on the request phase:
 [source, javascript]
 ----
 if (request.headers.containsKey('X-Gravitee-Break')) {
@@ -83,14 +92,8 @@ result.error = '{"error":"My specific error message","code":"MY_ERROR_CODE"}'
 result.contentType = 'application/json'
 ----
 
-=== OnRequestContent / OnResponseContent
-
-You can also transform request or response body content by applying a JavaScript script on
-the `OnRequestContent` phase or the `OnResponseContent` phase.
-
-WARNING: When working with scripts on `OnRequestContent` or `OnResponseContent` phase, the last instruction of the script **must be** the new body content that would be returned by the policy.
-
-The following example shows you how to use the JavaScript policy to transform JSON content:
+=== Override content
+To override content, you must enable "Override content." and make your script return the new content as the last instruction of your script.
 
 ==== Input body content
 [source, json]
@@ -105,6 +108,7 @@ The following example shows you how to use the JavaScript policy to transform JS
 ----
 
 ==== JavaScript script
+The following example shows you how to use the JavaScript policy to transform JSON content:
 [source, javascript]
 ----
 var content = JSON.parse(response.content);
@@ -141,6 +145,153 @@ Here is an example of how to set a request header based on a Property:
 request.headers.set('X-JavaScript-Policy', context.properties()['KEY_OF_MY_PROPERTY']);
 ----
 
+== Schema
+
+=== Request
+
+`request.<property>`
+
+[cols="1,1,1,5", options="header"]
+|===
+| Property | Type | Mutable | Description
+
+| `content` | `String` |  | Body of the request.
+| `transactionId` | `String` |  | Unique identifier for the transaction.
+| `clientIdentifier` | `String` |  | Identifies the client that made the request.
+| `uri` | `String` |  | The complete request URI.
+| `host` | `String` |  | Host from the incoming request.
+| `originalHost` | `String` |  | Host as originally received before any internal rewriting.
+| `contextPath` | `String` |  | API context path.
+| `pathInfo` | `String` |  | Path beyond the context path.
+| `path` | `String` |  | The full path component of the request URI.
+| `parameters` | `Map<String, <List<String>>` | ✅ | Query parameters as a multi-value map. For methods, refer to <<multimap-methods>>.
+| `pathParameters` | `Map<String, <List<String>>` |  | Parameters extracted from path templates. For methods, refer to <<multimap-methods>>. Note that altering method are useless in this context.
+| `headers` | `Map<String, List<String>>` | ✅ | HTTP headers. For methods, refer to <<headers-methods>>.
+| `method` | `HttpMethod` (enum) |  | HTTP method used in the request (e.g., GET, POST).
+| `scheme` | `String` |  | The scheme (HTTP or HTTPS) used by the request.
+| `version` | `HttpVersion` (enum) |  | HTTP protocol version: `HTTP_1_0`, `HTTP_1_1`, `HTTP_2`.
+| `timestamp` | `long` |  | Epoch timestamp of when the request was received.
+| `remoteAddress` | `String` |  | IP address of the client.
+| `localAddress` | `String` |  | Local IP address of the server handling the request.
+|===
+
+=== Response
+
+`response.<property>`
+
+[cols="1,1,1,5", options="header"]
+|===
+| Property | Type | Mutable | Description
+
+| `content` | `String` |  | Body of the response.
+| `status` | `int` |  | Response status code.
+| `reason` | `String` |  | Reason for the status.
+| `headers` | `Map<String, List<String>>` | ✅ | HTTP headers wrapped in a bindable object. For methods, refer to <<headers-methods>>.
+|===
+
+=== Message
+
+`message.<property>`
+
+[cols="1,1,1,5", options="header"]
+|===
+| Property | Type | Mutable | Description
+
+| `correlationId` | String |  | Correlation ID to track the message.
+| `parentCorrelationId` | String |  | Parent correlation ID.
+| `timestamp` | long |  | Epoch (ms) timestamp.
+| `error` | boolean |  | Message is an error message.
+| `metadata` | Map<String, Object> | ✅ | Message metadata. Dependent on the messaging system.
+| `headers` | Map<String, List<String>> | ✅ | Message headers wrapped in a bindable object. For methods, refer to <<headers-methods>>.
+| `content` | String |  | Message body as a string.
+| `contentAsBase64` | String |  | Message body bytes as a basic base64 string.
+| `contentAsByteArray` | byte[] |  | Message body bytes.
+| `attributes` | Map<String, Object> | ✅ | Message attributes wrapped in a bindable object. For methods, see below.
+|===
+
+**Message attributes methods**
+
+`message.attributes.<method>`
+
+[cols="1,1,1,5", options="header"]
+|===
+| Method | Arguments (type) | Return type | Description
+
+| `remove` | key (`Object`) |  | Remove an attribute.
+| `containsKey` | key (`Object`) | `boolean` | Check if an attribute exists.
+| `containsValue` | key (`Object`) | `boolean` | Check if one of the attributes contains the value.
+| `empty` |  | `boolean` | `true` when the attribute exists.
+| `size` |  | `int` | Return an attribute count.
+| `keySet` |  | `Set<String>` | All attribute names.
+|===
+
+=== Context
+
+`context.<property>`
+
+[cols="1,1,1,5", options="header"]
+|===
+| Property | Type | Mutable | Description
+
+| `attributes` | Map<String, Object> | ✅ | Context attributes as a map.
+| `attributeNames` | Set<String> |  | All attribute names.
+| `attributeAsList` | List<Object> |  | All attribute values.
+|===
+
+**Context attributes methods**
+
+`context.attributes.<method>`
+
+Refer to the Gravitee documentation for available attributes.
+
+[cols="1,1,1,5", options="header"]
+|===
+| Method | Arguments (type) | Return type | Description
+
+| `get` | key (`Object`) | `Object` | Get a Gravitee attribute starting with `gravitee.attribute.`.
+| `containsKey` | key (`Object`) | `boolean` | Check if a Gravitee attribute starting with `gravitee.attribute.` exists.
+| `set` | key (`String`) value (`Object`) |  | Sets a Gravitee attribute starting with `context.attributes.'key'.
+|===
+
+Other methods of `java.util.Map` are accessible, such as `remove` and `size`.
+
+=== Common objects
+
+==== [[headers-methods]]Headers methods
+
+Applicable to `request.headers`, `response.headers`, `message.headers`.
+
+[cols="1,1,1,5", options="header"]
+|===
+| Method | Arguments (type) | Return type | Description
+
+| `get` | key (`String`) | `String` | Get first value of a header.
+| `getAll` | key (`String`) | `List<String>` | Get all values of a header.
+| `put` | key (`String`), value (`String`) | Previous value (`List<String>`) | Set a header, replacing any existing values.
+| `put` | key (`String`), value (`List<String>`) | Previous value (`List<String>`) | Set a header, replacing any existing values.
+| `set` | key (`String`), value (`String`) | Updated http headers object | Set a header, replacing any existing values.
+| `set` | key (`String`), value (`List<String>`) | Updated http headers object | Set a header, replacing any existing values.
+| `remove` | key (`String`) | Updated http headers object | Remove a header.
+| `containsKey` | key (`Object`) | `boolean` | Check if a header exists.
+| `clear` |  |  | Remove all headers.
+| `isEmpty` |  | `boolean` | `true` when header exists.
+| `size` |  | `int` | Return header count.
+| `keySet` |  | `Set<String>` | All header names.
+| `entrySet` |  | `Set<Map.Entry<String, List<String>>>` | All headers as a set of entries.
+| `forEach` |  | `Consumer<Map.Entry<String, List<String>>>` | Allows to iterate over all headers.
+|===
+
+==== [[multimap-methods]]Multimap methods
+
+Multimap lets you use several values for a single map entry without pre-initializing a collection.
+
+Multimap is applicable to `request.parameters` and `request.pathParameters`.
+
+All methods of the Gravitee link:https://github.com/gravitee-io/gravitee-common/blob/master/src/main/java/io/gravitee/common/util/MultiValueMap.java[MultiValueMap] implementation: `getFirst`, `add`, `set`, `setAll`, `toSingleValueMap`, `containsAllKeys`.
+
+Other methods of `java.util.Map` are accessible, such as `remove` and `size`.
+
+
 == Errors
 
 === HTTP status code
@@ -152,6 +303,28 @@ request.headers.set('X-JavaScript-Policy', context.properties()['KEY_OF_MY_PROPE
 | The JavaScript script cannot be parsed/compiled or executed (mainly due to a syntax error)
 
 |===
+
+== Compatibility and Deprecation Notes
+
+The following properties of the JavaScript policy are **deprecated** and will be removed in future releases:
+
+- `onRequestScript`
+- `onResponseScript`
+- `onRequestContentScript`
+- `onResponseContentScript`
+
+Use the new configuration format, which allows defining single **Script** definition along with additional options such as *Read content* and *Override content*.
+
+If you created a v4 HTTP API with the JavaScript policy (version <= 1.4.0), `onRequestScript` and `onResponseScript` will still execute during the request and response phases respectively.
+It is strongly recommended to migrate your API to the new configuration format and use the `script` property instead.
+
+Because `onRequestScript` and `onResponseScript` are no longer displayed due to deprecation, you can retrieve their values via the Management API (e.g. https://gravitee-io-labs.github.io/mapi-v1-docs/#tag/api-plans/get/v1/organizations/{orgId}/environments/{envId}/apis/{api}/plans[listing plans associated with the given API]) or using the export feature in the Gravitee UI under API Configuration -> General section.
+
+[NOTE]
+The easiest migration path is:
+1. Create a new policy with the copied script.
+2. Delete the old one.
+3. Save and deploy the API.
 
 == Coming from Apigee
 

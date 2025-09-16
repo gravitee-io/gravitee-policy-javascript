@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.javascript;
+package io.gravitee.policy.v3.javascript;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.gravitee.policy.javascript.JavascriptInitializer.JAVASCRIPT_ENGINE;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.LinkedMultiValueMap;
 import io.gravitee.common.util.MultiValueMap;
@@ -37,6 +36,7 @@ import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.stream.ReadWriteStream;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
+import io.gravitee.policy.javascript.JavascriptInitializer;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
 import io.gravitee.reporter.api.http.Metrics;
 import io.vertx.core.Handler;
@@ -47,15 +47,21 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import javax.script.*;
-import org.junit.*;
+import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
+@ExtendWith(MockitoExtension.class)
 public class JavascriptPolicyTest {
 
     @Mock
@@ -76,28 +82,28 @@ public class JavascriptPolicyTest {
     @Mock
     private Vertx vertx;
 
-    @ClassRule
-    public static WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+    @RegisterExtension
+    public static WireMockExtension wiremock = WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();
 
-    @BeforeClass
+    @BeforeAll
     public static void globalInit() throws Exception {
         final JavascriptInitializer javascriptInitializer = new JavascriptInitializer();
         javascriptInitializer.onActivation();
     }
 
-    @Before
-    public void init() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
+    @BeforeEach
+    public void setUp() throws Exception {
+        lenient().when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
 
         final JavascriptInitializer javascriptInitializer = new JavascriptInitializer();
         javascriptInitializer.onActivation();
 
-        when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
+        lenient().when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
 
         // Make sure we execute the javascript on the current thread.
         Promise<Object> promise = new PromiseImpl<>();
-        doAnswer(
+        lenient()
+            .doAnswer(
                 i -> {
                     ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
                     ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
@@ -124,7 +130,6 @@ public class JavascriptPolicyTest {
         requestHeaders.set("C", "CValue");
 
         HttpHeaders responseHeaders = HttpHeaders.create();
-
         String script = "request.headers.forEach(function(v) { response.headers.set(v.key, v.value); });";
 
         when(request.headers()).thenReturn(requestHeaders);
@@ -160,7 +165,7 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldModifyResponseHeaders() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
+        HttpHeaders headers = spy(HttpHeaders.class);
         when(response.headers()).thenReturn(headers);
         when(configuration.getOnRequestScript()).thenReturn(loadResource("modify_response_headers.js"));
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
@@ -191,13 +196,13 @@ public class JavascriptPolicyTest {
      */
     @Test
     public void shouldNotBreakRequest() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
+        HttpHeaders headers = spy(HttpHeaders.class);
         when(request.headers()).thenReturn(headers);
 
         when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
 
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-        verify(headers, times(1)).set(eq("X-Groovy-Policy"), eq("ok"));
+        verify(headers, times(1)).set(eq("X-Javascript-Policy"), eq("ok"));
         verify(policyChain, times(1)).doNext(request, response);
     }
 
@@ -265,76 +270,108 @@ public class JavascriptPolicyTest {
         verify(policyChain, never()).doNext(any(), any());
     }
 
-    @Test(expected = ScriptException.class)
-    public void javaClassNotAllowed() throws ScriptException {
-        String script = "var system = Java.type('java.lang.System')";
-
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void systemExitNotAllowed() throws ScriptException {
-        String script = "exit(1);";
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void evalNotAllowed() throws ScriptException {
-        String script = "eval('1 + 2')";
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void loadNotAllowed() throws ScriptException {
-        String script = "load('lib.js');";
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void loadWithNewGlobalNotAllowed() throws ScriptException {
-        String script = new StringBuilder("var script = 'var i = 0;';")
-            .append("function addition() {")
-            .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
-            .append("}")
-            .append("addition();")
-            .toString();
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void quitNotAllowed() throws ScriptException {
-        String script = "quit();";
-        JAVASCRIPT_ENGINE.eval(script);
-    }
-
-    @Test(expected = ScriptException.class)
-    public void independentExecutions() throws ScriptException {
-        String script1 = "var a = 1";
-        String script2 = "a";
-        JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
-        JAVASCRIPT_ENGINE.eval(script2, new SimpleScriptContext());
-
-        fail("a should be undefined and it should raise an ScriptException");
+    @Test
+    public void javaClassNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = "var system = Java.type('java.lang.System')";
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
     }
 
     @Test
-    public void canCreateEngine() throws Exception {
-        final int port = wireMockRule.port();
-        final String path = "/unreachable";
-        stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
+    public void systemExitNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = "exit(1);";
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
+    }
 
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(response.headers()).thenReturn(headers);
+    @Test
+    public void evalNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = "eval('1 + 2')";
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
+    }
+
+    @Test
+    public void loadNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = "load('lib.js');";
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
+    }
+
+    @Test
+    public void loadWithNewGlobalNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = new StringBuilder("var script = 'var i = 0;';")
+                    .append("function addition() {")
+                    .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
+                    .append("}")
+                    .append("addition();")
+                    .toString();
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
+    }
+
+    @Test
+    public void quitNotAllowed() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script = "quit();";
+                JAVASCRIPT_ENGINE.eval(script);
+            }
+        );
+    }
+
+    @Test
+    public void independentExecutions() {
+        assertThrows(
+            ScriptException.class,
+            () -> {
+                String script1 = "var a = 1";
+                String script2 = "a";
+                JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
+                JAVASCRIPT_ENGINE.eval(script2, new SimpleScriptContext());
+
+                fail("a should be undefined and it should raise an ScriptException");
+            }
+        );
+    }
+
+    @Test
+    public void canCreateEngine() {
+        final String baseUrl = wiremock.getRuntimeInfo().getHttpBaseUrl();
+
+        final String path = "/unreachable";
+        wiremock.stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
+
         when(configuration.getOnRequestScript())
             .thenReturn(
-                "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl http://localhost:" +
-                port +
-                path +
+                "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl " +
+                baseUrl +
                 " \\\");\");"
             );
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
 
-        verify(0, getRequestedFor(urlEqualTo(path)));
+        wiremock.verify(0, getRequestedFor(urlEqualTo(path)));
     }
 
     private String loadResource(String resource) throws IOException {
