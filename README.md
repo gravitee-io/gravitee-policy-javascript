@@ -576,6 +576,13 @@ spec:
 
 ## Changelog
 
+### [2.0.0-alpha.2](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.1...2.0.0-alpha.2) (2025-09-19)
+
+
+##### Bug Fixes
+
+* rewrite documentation to doc-gen ([#46](https://github.com/gravitee-io/gravitee-policy-javascript/issues/46)) ([90f09f4](https://github.com/gravitee-io/gravitee-policy-javascript/commit/90f09f4ec6d934eb01a41a933f8be1fc177cb615))
+
 ### [2.0.0-alpha.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.4.0...2.0.0-alpha.1) (2025-09-16)
 
 
