@@ -33,16 +33,14 @@ public class ScriptEvaluator {
     private final Supplier<ScriptEngine> engineProvider;
 
     public Maybe<@NonNull Object> evalRx(String script, ScriptContext scriptContext) {
-        return Maybe.fromCallable(
-            () -> {
-                try {
-                    String evalResult = eval(script, scriptContext);
-                    return Optional.ofNullable(evalResult).orElse("");
-                } catch (ScriptException | ExecutionException | InterruptedException e) {
-                    throw new RuntimeException("Failed to execute JavaScript script", e);
-                }
+        return Maybe.fromCallable(() -> {
+            try {
+                String evalResult = eval(script, scriptContext);
+                return Optional.ofNullable(evalResult).orElse("");
+            } catch (ScriptException | ExecutionException | InterruptedException e) {
+                throw new RuntimeException("Failed to execute JavaScript script", e);
             }
-        );
+        });
     }
 
     public @Nullable String eval(String script, ScriptContext scriptContext)

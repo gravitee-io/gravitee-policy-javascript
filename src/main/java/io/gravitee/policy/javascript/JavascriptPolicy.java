@@ -75,13 +75,12 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
             Consumer<Buffer> onContentOverride = overridenContentBuffer -> ctx.request().contentLength(overridenContentBuffer.length());
             return ctx
                 .request()
-                .onBody(
-                    requestBodyBuffer ->
-                        requestBodyBuffer
-                            .defaultIfEmpty(Buffer.buffer())
-                            .flatMapMaybe(
-                                buffer -> onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, buffer, null), onContentOverride)
-                            )
+                .onBody(requestBodyBuffer ->
+                    requestBodyBuffer
+                        .defaultIfEmpty(Buffer.buffer())
+                        .flatMapMaybe(buffer ->
+                            onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, buffer, null), onContentOverride)
+                        )
                 );
         }
         if (isNotBlank(configuration.getScript())) {
@@ -107,13 +106,12 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
             Consumer<Buffer> onContentOverride = overridenContentBuffer -> ctx.response().contentLength(overridenContentBuffer.length());
             return ctx
                 .response()
-                .onBody(
-                    responseBodyBuffer ->
-                        responseBodyBuffer
-                            .defaultIfEmpty(Buffer.buffer())
-                            .flatMapMaybe(
-                                buffer -> onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, null, buffer), onContentOverride)
-                            )
+                .onBody(responseBodyBuffer ->
+                    responseBodyBuffer
+                        .defaultIfEmpty(Buffer.buffer())
+                        .flatMapMaybe(buffer ->
+                            onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, null, buffer), onContentOverride)
+                        )
                 );
         }
         if (isNotBlank(configuration.getScript())) {
@@ -138,19 +136,15 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
         return scriptEvaluator
             .evalRx(script, scriptContext)
             .ignoreElement()
-            .onErrorResumeNext(
-                e -> {
-                    logger.error("An error occurred while executing Javascript script", e);
-                    return ctx.interruptWith(createExecutionFailureFromThrowable(e));
-                }
-            )
+            .onErrorResumeNext(e -> {
+                logger.error("An error occurred while executing Javascript script", e);
+                return ctx.interruptWith(createExecutionFailureFromThrowable(e));
+            })
             .andThen(
-                Completable.defer(
-                    () -> {
-                        var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
-                        return handleResult(ctx, result);
-                    }
-                )
+                Completable.defer(() -> {
+                    var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                    return handleResult(ctx, result);
+                })
             );
     }
 
@@ -188,18 +182,14 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
     private Maybe<Buffer> runContentAwareScript(HttpPlainExecutionContext ctx, ScriptContext scriptContext, String script) {
         return scriptEvaluator
             .evalRx(script, scriptContext)
-            .onErrorResumeNext(
-                e -> {
-                    logger.error("An error occurred while executing Javascript script", e);
-                    return ctx.interruptBodyWith(createExecutionFailureFromThrowable(e));
-                }
-            )
-            .flatMap(
-                output -> {
-                    var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
-                    return handleResult(ctx, output, result);
-                }
-            );
+            .onErrorResumeNext(e -> {
+                logger.error("An error occurred while executing Javascript script", e);
+                return ctx.interruptBodyWith(createExecutionFailureFromThrowable(e));
+            })
+            .flatMap(output -> {
+                var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                return handleResult(ctx, output, result);
+            });
     }
 
     private static Maybe<Buffer> handleResult(HttpPlainExecutionContext ctx, Object output, PolicyResult result) {
@@ -219,12 +209,10 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
         return scriptEvaluator
             .evalRx(script, scriptContext)
             .onErrorResumeNext(e -> ctx.interruptMessageWith(createExecutionFailureFromThrowable(e)))
-            .flatMap(
-                output -> {
-                    var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
-                    return handleResult(ctx, message, output, result);
-                }
-            );
+            .flatMap(output -> {
+                var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                return handleResult(ctx, message, output, result);
+            });
     }
 
     private Maybe<Message> handleResult(HttpMessageExecutionContext ctx, Message message, Object output, PolicyResult result) {

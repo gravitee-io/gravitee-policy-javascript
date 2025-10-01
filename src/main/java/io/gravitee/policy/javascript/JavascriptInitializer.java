@@ -57,12 +57,11 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
     private static synchronized void initJavascriptEngine() {
         if (!initialized) {
             NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-            JAVASCRIPT_ENGINE =
-                factory.getScriptEngine(
-                    new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
-                    JavascriptInitializer.class.getClassLoader(),
-                    className -> false
-                );
+            JAVASCRIPT_ENGINE = factory.getScriptEngine(
+                new String[] { "-strict", "--no-java", "--no-syntax-extensions", "--optimistic-types=true" },
+                JavascriptInitializer.class.getClassLoader(),
+                className -> false
+            );
 
             final Bindings bd = JAVASCRIPT_ENGINE.getBindings(ScriptContext.ENGINE_SCOPE);
             bd.remove("load");
