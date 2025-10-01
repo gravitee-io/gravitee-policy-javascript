@@ -91,22 +91,20 @@ public class JsHttpClient {
 
         Future<HttpClientRequest> futureRequest = httpClient.request(requestOptions);
         futureRequest.onFailure(throwable -> handleError(callback, future, throwable));
-        futureRequest.onSuccess(
-            httpClientRequest -> {
-                // Connection is made, lets continue.
-                final Future<HttpClientResponse> futureResponse;
+        futureRequest.onSuccess(httpClientRequest -> {
+            // Connection is made, lets continue.
+            final Future<HttpClientResponse> futureResponse;
 
-                if (request.getPayload() != null) {
-                    futureResponse = httpClientRequest.send(Buffer.buffer(request.getPayload()));
-                } else {
-                    futureResponse = httpClientRequest.send();
-                }
-
-                futureResponse
-                    .onSuccess(httpResponse -> handleSuccess(callback, future, httpResponse))
-                    .onFailure(throwable -> handleError(callback, future, throwable));
+            if (request.getPayload() != null) {
+                futureResponse = httpClientRequest.send(Buffer.buffer(request.getPayload()));
+            } else {
+                futureResponse = httpClientRequest.send();
             }
-        );
+
+            futureResponse
+                .onSuccess(httpResponse -> handleSuccess(callback, future, httpResponse))
+                .onFailure(throwable -> handleError(callback, future, throwable));
+        });
 
         return exchange;
     }
@@ -120,19 +118,17 @@ public class JsHttpClient {
         CompletableFuture<JsClientResponse> future,
         HttpClientResponse httpResponse
     ) {
-        return httpResponse.bodyHandler(
-            buffer -> {
-                final JsClientResponse javascriptResponse = new JsClientResponse();
-                javascriptResponse.setStatus(httpResponse.statusCode());
-                javascriptResponse.setBody(buffer.toString());
+        return httpResponse.bodyHandler(buffer -> {
+            final JsClientResponse javascriptResponse = new JsClientResponse();
+            javascriptResponse.setStatus(httpResponse.statusCode());
+            javascriptResponse.setBody(buffer.toString());
 
-                if (callback != null) {
-                    callback.accept(javascriptResponse, null);
-                }
-
-                future.complete(javascriptResponse);
+            if (callback != null) {
+                callback.accept(javascriptResponse, null);
             }
-        );
+
+            future.complete(javascriptResponse);
+        });
     }
 
     private void handleError(BiConsumer<Object, Object> callback, CompletableFuture<JsClientResponse> future, Throwable throwable) {

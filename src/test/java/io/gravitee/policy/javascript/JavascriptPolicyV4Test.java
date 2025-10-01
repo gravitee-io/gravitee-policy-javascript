@@ -101,18 +101,16 @@ class JavascriptPolicyV4Test {
 
         ((Maybe<Buffer>) onBodyCaptor.getValue().apply(Maybe.just(Buffer.buffer()))).test()
             .awaitDone(10, TimeUnit.SECONDS)
-            .assertError(
-                error -> {
-                    assertThat(error).isInstanceOf(InterruptionFailureException.class);
-                    InterruptionFailureException failureException = (InterruptionFailureException) error;
-                    ExecutionFailure executionFailure = failureException.getExecutionFailure();
-                    assertThat(executionFailure).isNotNull();
-                    assertThat(executionFailure.key()).isEqualTo("JAVASCRIPT_EXECUTION_FAILURE");
-                    assertThat(executionFailure.statusCode()).isEqualTo(INTERNAL_SERVER_ERROR_500);
-                    assertThat(executionFailure.message()).isNotNull();
-                    return true;
-                }
-            );
+            .assertError(error -> {
+                assertThat(error).isInstanceOf(InterruptionFailureException.class);
+                InterruptionFailureException failureException = (InterruptionFailureException) error;
+                ExecutionFailure executionFailure = failureException.getExecutionFailure();
+                assertThat(executionFailure).isNotNull();
+                assertThat(executionFailure.key()).isEqualTo("JAVASCRIPT_EXECUTION_FAILURE");
+                assertThat(executionFailure.statusCode()).isEqualTo(INTERNAL_SERVER_ERROR_500);
+                assertThat(executionFailure.message()).isNotNull();
+                return true;
+            });
     }
 
     @Test
@@ -124,18 +122,16 @@ class JavascriptPolicyV4Test {
 
         ((Maybe<Buffer>) onBodyCaptor.getValue().apply(Maybe.just(Buffer.buffer()))).test()
             .awaitDone(10, TimeUnit.SECONDS)
-            .assertError(
-                error -> {
-                    assertThat(error).isInstanceOf(InterruptionFailureException.class);
-                    InterruptionFailureException failureException = (InterruptionFailureException) error;
-                    ExecutionFailure executionFailure = failureException.getExecutionFailure();
-                    assertThat(executionFailure).isNotNull();
-                    assertThat(executionFailure.key()).isEqualTo("JAVASCRIPT_FAILED_ON_PURPOSE");
-                    assertThat(executionFailure.statusCode()).isEqualTo(BAD_REQUEST_400);
-                    assertThat(executionFailure.message()).isEqualTo("Rejected Request");
-                    return true;
-                }
-            );
+            .assertError(error -> {
+                assertThat(error).isInstanceOf(InterruptionFailureException.class);
+                InterruptionFailureException failureException = (InterruptionFailureException) error;
+                ExecutionFailure executionFailure = failureException.getExecutionFailure();
+                assertThat(executionFailure).isNotNull();
+                assertThat(executionFailure.key()).isEqualTo("JAVASCRIPT_FAILED_ON_PURPOSE");
+                assertThat(executionFailure.statusCode()).isEqualTo(BAD_REQUEST_400);
+                assertThat(executionFailure.message()).isEqualTo("Rejected Request");
+                return true;
+            });
     }
 
     @Test
@@ -412,8 +408,9 @@ class JavascriptPolicyV4Test {
             .assertValueCount(1)
             .assertNoErrors();
 
-        assertThat(message.<String>attribute("wronglyBase64EncodedContent"))
-            .isNotEqualTo(Base64.getEncoder().encodeToString(isoEncodedCharacter));
+        assertThat(message.<String>attribute("wronglyBase64EncodedContent")).isNotEqualTo(
+            Base64.getEncoder().encodeToString(isoEncodedCharacter)
+        );
         assertThat(message.<String>attribute("goodBase64Content")).isEqualTo(Base64.getEncoder().encodeToString(isoEncodedCharacter));
         assertThat(message.<byte[]>attribute("byteArray")).isEqualTo(isoEncodedCharacter);
     }

@@ -73,19 +73,16 @@ public class JavascriptPolicyIntegrationTest extends AbstractPolicyTest<Javascri
     void should_execute_script(HttpClient client) {
         wiremock.stubFor(post("/team").willReturn(ok("").withHeader("X-To-Remove", "value")));
 
-        WebClient
-            .wrap(client)
+        WebClient.wrap(client)
             .post("/test")
             .rxSend()
             .test()
             .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().names()).doesNotContain("X-To-Remove");
-                    return true;
-                }
-            )
+            .assertValue(response -> {
+                assertThat(response.statusCode()).isEqualTo(200);
+                assertThat(response.headers().names()).doesNotContain("X-To-Remove");
+                return true;
+            })
             .assertComplete()
             .assertNoErrors();
 
@@ -97,27 +94,22 @@ public class JavascriptPolicyIntegrationTest extends AbstractPolicyTest<Javascri
     void should_not_use_response_template_when_no_key_provided(HttpClient client) {
         wiremock.stubFor(post("/team").willReturn(ok("")));
 
-        WebClient
-            .wrap(client)
+        WebClient.wrap(client)
             .post("/test")
             .putHeader(HttpHeaderNames.ACCEPT.toString(), "*/*")
             .putHeader("X-Gravitee-Break", "break")
             .rxSend()
-            .map(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(409);
-                    assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/json");
-                    return response.body();
-                }
-            )
+            .map(response -> {
+                assertThat(response.statusCode()).isEqualTo(409);
+                assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/json");
+                return response.body();
+            })
             .test()
             .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                body -> {
-                    assertThat(body).hasToString("{\"message\":\"Error message no response template\",\"http_status_code\":409}");
-                    return true;
-                }
-            )
+            .assertValue(body -> {
+                assertThat(body).hasToString("{\"message\":\"Error message no response template\",\"http_status_code\":409}");
+                return true;
+            })
             .assertComplete()
             .assertNoErrors();
 
@@ -129,30 +121,24 @@ public class JavascriptPolicyIntegrationTest extends AbstractPolicyTest<Javascri
     void should_use_response_template_when_key_provided(HttpClient client) {
         wiremock.stubFor(post("/team").willReturn(ok("")));
 
-        WebClient
-            .wrap(client)
+        WebClient.wrap(client)
             .post("/test")
             .putHeader(HttpHeaderNames.ACCEPT.toString(), "*/*")
             .putHeader("X-Gravitee-Break", "break")
             .rxSend()
-            .map(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(450);
-                    assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/xml");
-                    return response.body();
-                }
-            )
+            .map(response -> {
+                assertThat(response.statusCode()).isEqualTo(450);
+                assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/xml");
+                return response.body();
+            })
             .test()
             .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                body -> {
-                    assertThat(body)
-                        .hasToString(
-                            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<auth>\n    <resp>\n        <hdr>E</hdr>\n        <errDesc>internal technical error </errDesc>\n    </resp>\n</auth>"
-                        );
-                    return true;
-                }
-            )
+            .assertValue(body -> {
+                assertThat(body).hasToString(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<auth>\n    <resp>\n        <hdr>E</hdr>\n        <errDesc>internal technical error </errDesc>\n    </resp>\n</auth>"
+                );
+                return true;
+            })
             .assertComplete()
             .assertNoErrors();
 
@@ -227,12 +213,10 @@ public class JavascriptPolicyIntegrationTest extends AbstractPolicyTest<Javascri
             .flatMap(HttpClientRequest::rxSend)
             .test()
             .awaitDone(5, TimeUnit.SECONDS)
-            .assertValue(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(500);
-                    return true;
-                }
-            )
+            .assertValue(response -> {
+                assertThat(response.statusCode()).isEqualTo(500);
+                return true;
+            })
             .assertComplete()
             .assertNoErrors();
     }

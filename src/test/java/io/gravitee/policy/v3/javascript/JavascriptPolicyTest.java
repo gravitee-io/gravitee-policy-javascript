@@ -103,13 +103,11 @@ public class JavascriptPolicyTest {
         // Make sure we execute the javascript on the current thread.
         Promise<Object> promise = new PromiseImpl<>();
         lenient()
-            .doAnswer(
-                i -> {
-                    ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
-                    ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
-                    return null;
-                }
-            )
+            .doAnswer(i -> {
+                ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
+                ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
+                return null;
+            })
             .when(vertx)
             .executeBlocking(any(Handler.class), any(Handler.class));
     }
@@ -219,14 +217,13 @@ public class JavascriptPolicyTest {
         headers.set("X-Gravitee-Break", "value");
 
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-        verify(policyChain, times(1))
-            .failWith(
-                argThat(
-                    result ->
-                        result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
-                        result.message().equals("Stop request processing due to X-Gravitee-Break header")
-                )
-            );
+        verify(policyChain, times(1)).failWith(
+            argThat(
+                result ->
+                    result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
+                    result.message().equals("Stop request processing due to X-Gravitee-Break header")
+            )
+        );
     }
 
     @Test
@@ -243,14 +240,13 @@ public class JavascriptPolicyTest {
         stream.end(Buffer.buffer());
 
         verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
-        verify(policyChain, times(1))
-            .streamFailWith(
-                argThat(
-                    result ->
-                        result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
-                        result.message().equals("Stop request content processing due to X-Gravitee-Break header")
-                )
-            );
+        verify(policyChain, times(1)).streamFailWith(
+            argThat(
+                result ->
+                    result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
+                    result.message().equals("Stop request content processing due to X-Gravitee-Break header")
+            )
+        );
         verify(policyChain, never()).doNext(any(), any());
     }
 
@@ -272,88 +268,67 @@ public class JavascriptPolicyTest {
 
     @Test
     public void javaClassNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = "var system = Java.type('java.lang.System')";
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = "var system = Java.type('java.lang.System')";
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void systemExitNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = "exit(1);";
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = "exit(1);";
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void evalNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = "eval('1 + 2')";
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = "eval('1 + 2')";
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void loadNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = "load('lib.js');";
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = "load('lib.js');";
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void loadWithNewGlobalNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = new StringBuilder("var script = 'var i = 0;';")
-                    .append("function addition() {")
-                    .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
-                    .append("}")
-                    .append("addition();")
-                    .toString();
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = new StringBuilder("var script = 'var i = 0;';")
+                .append("function addition() {")
+                .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
+                .append("}")
+                .append("addition();")
+                .toString();
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void quitNotAllowed() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script = "quit();";
-                JAVASCRIPT_ENGINE.eval(script);
-            }
-        );
+        assertThrows(ScriptException.class, () -> {
+            String script = "quit();";
+            JAVASCRIPT_ENGINE.eval(script);
+        });
     }
 
     @Test
     public void independentExecutions() {
-        assertThrows(
-            ScriptException.class,
-            () -> {
-                String script1 = "var a = 1";
-                String script2 = "a";
-                JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
-                JAVASCRIPT_ENGINE.eval(script2, new SimpleScriptContext());
+        assertThrows(ScriptException.class, () -> {
+            String script1 = "var a = 1";
+            String script2 = "a";
+            JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
+            JAVASCRIPT_ENGINE.eval(script2, new SimpleScriptContext());
 
-                fail("a should be undefined and it should raise an ScriptException");
-            }
-        );
+            fail("a should be undefined and it should raise an ScriptException");
+        });
     }
 
     @Test
@@ -363,12 +338,11 @@ public class JavascriptPolicyTest {
         final String path = "/unreachable";
         wiremock.stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
 
-        when(configuration.getOnRequestScript())
-            .thenReturn(
-                "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl " +
+        when(configuration.getOnRequestScript()).thenReturn(
+            "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl " +
                 baseUrl +
                 " \\\");\");"
-            );
+        );
         new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
 
         wiremock.verify(0, getRequestedFor(urlEqualTo(path)));

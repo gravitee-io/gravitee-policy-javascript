@@ -57,13 +57,17 @@ import org.junit.jupiter.api.Test;
 
 public class JavascriptPolicyV4IntegrationTest {
 
-    private static final JsonObject GIVEN_CONTENT = new JsonObject("""
+    private static final JsonObject GIVEN_CONTENT = new JsonObject(
+        """
         {"message":"Hello World!"}
-        """);
+        """
+    );
 
-    private static final JsonObject EXPECTED_CONTENT = new JsonObject("""
+    private static final JsonObject EXPECTED_CONTENT = new JsonObject(
+        """
         {"message":"Hello Universe!"}
-        """);
+        """
+    );
 
     @GatewayTest
     @Nested
@@ -233,18 +237,14 @@ public class JavascriptPolicyV4IntegrationTest {
                 .map(Buffer::toString)
                 .map(json -> new JsonObject(json).getJsonArray("items"))
                 .doOnSuccess(items -> assertThat(items).hasSize(2))
-                .doOnSuccess(
-                    items -> {
-                        items.forEach(
-                            item -> {
-                                var message = (JsonObject) item;
-                                assertThat(message.getString("content")).isEqualTo(EXPECTED_CONTENT.toString());
-                                var headers = message.getJsonObject("headers");
-                                assertThat(headers.getString("x-phase")).contains("on-response-message");
-                            }
-                        );
-                    }
-                )
+                .doOnSuccess(items -> {
+                    items.forEach(item -> {
+                        var message = (JsonObject) item;
+                        assertThat(message.getString("content")).isEqualTo(EXPECTED_CONTENT.toString());
+                        var headers = message.getJsonObject("headers");
+                        assertThat(headers.getString("x-phase")).contains("on-response-message");
+                    });
+                })
                 .test()
                 .awaitDone(5, TimeUnit.SECONDS)
                 .assertNoErrors()

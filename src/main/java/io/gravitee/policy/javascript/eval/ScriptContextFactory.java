@@ -43,13 +43,10 @@ import jdk.dynalink.beans.StaticClass;
 public class ScriptContextFactory {
 
     public static ScriptContext createHttpPlainScriptContext(final HttpPlainExecutionContext ctx) {
-        return createCommonScriptContext(
-            new JsHttpBaseExecutionContext(ctx),
-            bindings -> {
-                bindings.put(REQUEST_VARIABLE_NAME, new JsHttpRequest(ctx.request()));
-                bindings.put(RESPONSE_VARIABLE_NAME, new JsHttpResponse(ctx.response()));
-            }
-        );
+        return createCommonScriptContext(new JsHttpBaseExecutionContext(ctx), bindings -> {
+            bindings.put(REQUEST_VARIABLE_NAME, new JsHttpRequest(ctx.request()));
+            bindings.put(RESPONSE_VARIABLE_NAME, new JsHttpResponse(ctx.response()));
+        });
     }
 
     public static ScriptContext createHttpPlainScriptContext(
@@ -57,22 +54,16 @@ public class ScriptContextFactory {
         final Buffer requestContent,
         final Buffer responseContent
     ) {
-        return createCommonScriptContext(
-            new JsHttpBaseExecutionContext(ctx),
-            bindings -> {
-                bindings.put(REQUEST_VARIABLE_NAME, new JsHttpRequest(ctx.request(), requestContent));
-                bindings.put(RESPONSE_VARIABLE_NAME, new JsHttpResponse(ctx.response(), responseContent));
-            }
-        );
+        return createCommonScriptContext(new JsHttpBaseExecutionContext(ctx), bindings -> {
+            bindings.put(REQUEST_VARIABLE_NAME, new JsHttpRequest(ctx.request(), requestContent));
+            bindings.put(RESPONSE_VARIABLE_NAME, new JsHttpResponse(ctx.response(), responseContent));
+        });
     }
 
     public static ScriptContext createHttpMessageScriptContext(final HttpMessageExecutionContext ctx, final Message message) {
-        return createCommonScriptContext(
-            new JsHttpBaseExecutionContext(ctx),
-            bindings -> {
-                bindings.put(MESSAGE_VARIABLE_NAME, new JsMessage(message));
-            }
-        );
+        return createCommonScriptContext(new JsHttpBaseExecutionContext(ctx), bindings -> {
+            bindings.put(MESSAGE_VARIABLE_NAME, new JsMessage(message));
+        });
     }
 
     public static ScriptContext createContentAwareScriptContext(
@@ -80,13 +71,10 @@ public class ScriptContextFactory {
         JsContentAwareResponse response,
         JsExecutionContext executionContext
     ) {
-        return createCommonScriptContext(
-            executionContext,
-            bindings -> {
-                bindings.put(REQUEST_VARIABLE_NAME, request);
-                bindings.put(RESPONSE_VARIABLE_NAME, response);
-            }
-        );
+        return createCommonScriptContext(executionContext, bindings -> {
+            bindings.put(REQUEST_VARIABLE_NAME, request);
+            bindings.put(RESPONSE_VARIABLE_NAME, response);
+        });
     }
 
     private static <T> ScriptContext createCommonScriptContext(final T ctx, Consumer<Bindings> extraBindingsConfigurer) {

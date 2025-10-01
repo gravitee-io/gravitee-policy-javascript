@@ -1,7 +1,7 @@
 [
-  {
-    "age": 32,
-    "firstname": "John",
-    "lastname": "Doe"
-  }
+    {
+        "age": 32,
+        "firstname": "John",
+        "lastname": "Doe"
+    }
 ]

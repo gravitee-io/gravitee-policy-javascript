@@ -79,45 +79,42 @@ public class JavascriptPolicy {
         String script = configuration.getOnResponseContentScript();
 
         if (script != null && !script.trim().isEmpty()) {
-            return TransformableResponseStreamBuilder
-                .on(response)
+            return TransformableResponseStreamBuilder.on(response)
                 .chain(policyChain)
-                .transform(
-                    buffer -> {
-                        try {
-                            final String content = executeStreamScript(
-                                new JsContentAwareRequest(request, null),
-                                new JsContentAwareResponse(response, buffer.toString()),
-                                new JsExecutionContext(executionContext),
-                                script
+                .transform(buffer -> {
+                    try {
+                        final String content = executeStreamScript(
+                            new JsContentAwareRequest(request, null),
+                            new JsContentAwareResponse(response, buffer.toString()),
+                            new JsExecutionContext(executionContext),
+                            script
+                        );
+                        return Buffer.buffer(content);
+                    } catch (PolicyFailureException ex) {
+                        if (ex.getResult().getContentType() != null) {
+                            policyChain.streamFailWith(
+                                io.gravitee.policy.api.PolicyResult.failure(
+                                    ex.getResult().getKey(),
+                                    ex.getResult().getCode(),
+                                    ex.getResult().getError(),
+                                    ex.getResult().getContentType()
+                                )
                             );
-                            return Buffer.buffer(content);
-                        } catch (PolicyFailureException ex) {
-                            if (ex.getResult().getContentType() != null) {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError(),
-                                        ex.getResult().getContentType()
-                                    )
-                                );
-                            } else {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError()
-                                    )
-                                );
-                            }
-                        } catch (Throwable t) {
-                            logger.error("Unable to run Javascript script", t);
-                            throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
+                        } else {
+                            policyChain.streamFailWith(
+                                io.gravitee.policy.api.PolicyResult.failure(
+                                    ex.getResult().getKey(),
+                                    ex.getResult().getCode(),
+                                    ex.getResult().getError()
+                                )
+                            );
                         }
-                        return null;
+                    } catch (Throwable t) {
+                        logger.error("Unable to run Javascript script", t);
+                        throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
                     }
-                )
+                    return null;
+                })
                 .build();
         }
 
@@ -134,46 +131,43 @@ public class JavascriptPolicy {
         String script = configuration.getOnRequestContentScript();
 
         if (script != null && !script.trim().isEmpty()) {
-            return TransformableRequestStreamBuilder
-                .on(request)
+            return TransformableRequestStreamBuilder.on(request)
                 .chain(policyChain)
-                .transform(
-                    buffer -> {
-                        try {
-                            final String content = executeStreamScript(
-                                new JsContentAwareRequest(request, buffer.toString()),
-                                new JsContentAwareResponse(response, null),
-                                new JsExecutionContext(executionContext),
-                                script
-                            );
+                .transform(buffer -> {
+                    try {
+                        final String content = executeStreamScript(
+                            new JsContentAwareRequest(request, buffer.toString()),
+                            new JsContentAwareResponse(response, null),
+                            new JsExecutionContext(executionContext),
+                            script
+                        );
 
-                            return Buffer.buffer(content);
-                        } catch (PolicyFailureException ex) {
-                            if (ex.getResult().getContentType() != null) {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError(),
-                                        ex.getResult().getContentType()
-                                    )
-                                );
-                            } else {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError()
-                                    )
-                                );
-                            }
-                        } catch (Throwable t) {
-                            logger.error("Unable to run Javascript script", t);
-                            throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
+                        return Buffer.buffer(content);
+                    } catch (PolicyFailureException ex) {
+                        if (ex.getResult().getContentType() != null) {
+                            policyChain.streamFailWith(
+                                io.gravitee.policy.api.PolicyResult.failure(
+                                    ex.getResult().getKey(),
+                                    ex.getResult().getCode(),
+                                    ex.getResult().getError(),
+                                    ex.getResult().getContentType()
+                                )
+                            );
+                        } else {
+                            policyChain.streamFailWith(
+                                io.gravitee.policy.api.PolicyResult.failure(
+                                    ex.getResult().getKey(),
+                                    ex.getResult().getCode(),
+                                    ex.getResult().getError()
+                                )
+                            );
                         }
-                        return null;
+                    } catch (Throwable t) {
+                        logger.error("Unable to run Javascript script", t);
+                        throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
                     }
-                )
+                    return null;
+                })
                 .build();
         }
 
