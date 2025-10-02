@@ -1,3 +1,10 @@
+# [2.0.0-alpha.3](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.2...2.0.0-alpha.3) (2025-10-02)
+
+
+### Bug Fixes
+
+* few project changes ([71b8ddc](https://github.com/gravitee-io/gravitee-policy-javascript/commit/71b8ddc16badb5d72ab0fd59290fa77df65c1935))
+
 # [2.0.0-alpha.2](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.1...2.0.0-alpha.2) (2025-09-19)
 
 
