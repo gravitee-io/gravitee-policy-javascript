@@ -1,3 +1,10 @@
+# [2.0.0-alpha.4](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.3...2.0.0-alpha.4) (2025-10-09)
+
+
+### Bug Fixes
+
+* override version of central-publishing-maven-plugin with 0.9.0 ([2d28389](https://github.com/gravitee-io/gravitee-policy-javascript/commit/2d283893cda4ab8a0ee31449ef969a05aa19bdff))
+
 # [2.0.0-alpha.3](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.2...2.0.0-alpha.3) (2025-10-02)
 
 
