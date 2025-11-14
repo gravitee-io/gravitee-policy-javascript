@@ -580,6 +580,13 @@ spec:
 
 ## Changelog
 
+### [2.0.0-alpha.5](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.4...2.0.0-alpha.5) (2025-11-14)
+
+
+##### Features
+
+* enable for LLM & MCP Proxy API ([#49](https://github.com/gravitee-io/gravitee-policy-javascript/issues/49)) ([63f97f4](https://github.com/gravitee-io/gravitee-policy-javascript/commit/63f97f4564b21b39f19ffec3f2eff10a57bccffb))
+
 ### [2.0.0-alpha.4](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.3...2.0.0-alpha.4) (2025-10-09)
 
 
