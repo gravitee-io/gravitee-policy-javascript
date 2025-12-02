@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,8 @@ import java.io.StringWriter;
 import java.util.concurrent.ExecutionException;
 import javax.script.*;
 import jdk.dynalink.beans.StaticClass;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -308,7 +310,6 @@ public class JavascriptPolicy {
         bindings.put(STATE_CLASS_VARIABLE_NAME, StaticClass.forClass(PolicyResult.State.class));
         bindings.put(REQUEST_CLASS_VARIABLE_NAME, StaticClass.forClass(JsClientRequest.class));
         bindings.put(HTTP_CLIENT_VARIABLE_NAME, new JsHttpClient(HTTP_CLIENT));
-
         final SimpleScriptContext scriptContext = new SimpleScriptContext();
         final StringWriter printWriter = new StringWriter();
         final StringWriter errorWriter = new StringWriter();
