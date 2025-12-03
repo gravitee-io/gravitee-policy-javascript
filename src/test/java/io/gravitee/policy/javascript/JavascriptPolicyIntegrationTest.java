@@ -30,8 +30,10 @@ import io.gravitee.definition.model.Api;
 import io.gravitee.definition.model.ExecutionMode;
 import io.gravitee.gateway.api.http.HttpHeaderNames;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
-import io.vertx.reactivex.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClient;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
@@ -61,88 +63,59 @@ public class JavascriptPolicyIntegrationTest extends AbstractPolicyTest<Javascri
 
     @Test
     @DeployApi("/apis/api.json")
-    void should_execute_script(WebClient client) {
+    void should_execute_script(WebClient client) throws ExecutionException, InterruptedException, TimeoutException {
         wiremock.stubFor(post("/team").willReturn(ok("").withHeader("X-To-Remove", "value")));
 
-        client
-            .post("/test")
-            .rxSend()
-            .test()
-            .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().names()).doesNotContain("X-To-Remove");
-                    return true;
-                }
-            )
-            .assertComplete()
-            .assertNoErrors();
+        var response = client.post("/test").send().toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().names()).doesNotContain("X-To-Remove");
 
         wiremock.verify(1, postRequestedFor(urlPathEqualTo("/team")).withHeader("X-Gravitee-Javascript", equalTo("Yes")));
     }
 
     @Test
     @DeployApi("/apis/api-fail-response-template-no-key.json")
-    void should_not_use_response_template_when_no_key_provided(WebClient client) {
+    void should_not_use_response_template_when_no_key_provided(WebClient client)
+        throws ExecutionException, InterruptedException, TimeoutException {
         wiremock.stubFor(post("/team").willReturn(ok("")));
 
-        client
+        var response = client
             .post("/test")
             .putHeader(HttpHeaderNames.ACCEPT.toString(), "*/*")
             .putHeader("X-Gravitee-Break", "break")
-            .rxSend()
-            .map(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(409);
-                    assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/json");
-                    return response.body();
-                }
-            )
-            .test()
-            .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                body -> {
-                    assertThat(body).hasToString("{\"message\":\"Error message no response template\",\"http_status_code\":409}");
-                    return true;
-                }
-            )
-            .assertComplete()
-            .assertNoErrors();
+            .send()
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS);
 
+        assertThat(response.statusCode()).isEqualTo(409);
+        assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).doesNotContain("application/json\"");
+        assertThat(response.bodyAsString()).isEqualTo("{\"message\":\"Error message no response template\",\"http_status_code\":409}");
         wiremock.verify(0, postRequestedFor(urlPathEqualTo("/team")));
     }
 
     @Test
     @DeployApi("/apis/api-fail-response-template.json")
-    void should_use_response_template_when_key_provided(WebClient client) {
+    void should_use_response_template_when_key_provided(WebClient client)
+        throws ExecutionException, InterruptedException, TimeoutException {
         wiremock.stubFor(post("/team").willReturn(ok("")));
 
-        client
+        var response = client
             .post("/test")
             .putHeader(HttpHeaderNames.ACCEPT.toString(), "*/*")
             .putHeader("X-Gravitee-Break", "break")
-            .rxSend()
-            .map(
-                response -> {
-                    assertThat(response.statusCode()).isEqualTo(450);
-                    assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).isNotNull().isEqualTo("application/xml");
-                    return response.body();
-                }
-            )
-            .test()
-            .awaitDone(10, TimeUnit.SECONDS)
-            .assertValue(
-                body -> {
-                    assertThat(body)
-                        .hasToString(
-                            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<auth>\n    <resp>\n        <hdr>E</hdr>\n        <errDesc>internal technical error </errDesc>\n    </resp>\n</auth>"
-                        );
-                    return true;
-                }
-            )
-            .assertComplete()
-            .assertNoErrors();
+            .send()
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS);
+
+        assertThat(response.statusCode()).isEqualTo(450);
+        assertThat(response.headers().get(HttpHeaderNames.CONTENT_TYPE)).doesNotContain("application/xml\"");
+        assertThat(response.bodyAsString())
+            .isEqualTo(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<auth>\n    <resp>\n        <hdr>E</hdr>\n        <errDesc>internal technical error </errDesc>\n    </resp>\n</auth>"
+            );
 
         wiremock.verify(0, postRequestedFor(urlPathEqualTo("/team")));
     }

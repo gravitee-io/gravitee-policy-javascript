@@ -49,7 +49,6 @@ import io.gravitee.gateway.api.stream.ReadWriteStream;
 import io.gravitee.policy.api.PolicyChain;
 import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
-import io.gravitee.reporter.api.http.Metrics;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -66,6 +65,7 @@ import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -109,252 +109,255 @@ public class JavascriptPolicyTest {
 
     @BeforeEach
     public void init() throws Exception {
-        when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
-
         final JavascriptInitializer javascriptInitializer = new JavascriptInitializer();
         javascriptInitializer.onActivation();
+        //        when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
 
-        when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
-
-        // Make sure we execute the javascript on the current thread.
-        Promise<Object> promise = new PromiseImpl<>();
-        doAnswer(
-                i -> {
-                    ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
-                    ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
-                    return null;
-                }
-            )
-            .when(vertx)
-            .executeBlocking(any(Handler.class), any(Handler.class));
     }
 
-    @Test
-    public void shouldFail_invalidScript() throws Exception {
-        when(configuration.getOnRequestScript()).thenReturn(loadResource("invalid_script.js"));
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+    @Nested
+    class EvaluationFailures {
 
-        verify(policyChain, times(1)).failWith(any(io.gravitee.policy.api.PolicyResult.class));
+        @Test
+        public void javaClassNotAllowed() {
+            String script = "var system = Java.type('java.lang.System')";
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void systemExitNotAllowed() {
+            String script = "exit(1);";
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void evalNotAllowed() {
+            String script = "eval('1 + 2')";
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void loadNotAllowed() {
+            String script = "load('lib.js');";
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void loadWithNewGlobalNotAllowed() {
+            String script = new StringBuilder("var script = 'var i = 0;';")
+                .append("function addition() {")
+                .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
+                .append("}")
+                .append("addition();")
+                .toString();
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void quitNotAllowed() {
+            String script = "quit();";
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
+        }
+
+        @Test
+        public void independentExecutions() throws javax.script.ScriptException {
+            String script1 = "var a = 1";
+            String script2 = "a";
+            JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
+            assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script2)).isInstanceOf(ScriptException.class);
+        }
     }
 
-    @Test
-    public void shouldIterateOverHeaders() {
-        HttpHeaders requestHeaders = HttpHeaders.create();
-        requestHeaders.set("A", "AValue");
-        requestHeaders.set("B", "BValue");
-        requestHeaders.set("C", "CValue");
+    @Nested
+    class OnRequest {
 
-        HttpHeaders responseHeaders = HttpHeaders.create();
-
-        String script = "request.headers.forEach(function(v) { response.headers.set(v.key, v.value); });";
-
-        when(request.headers()).thenReturn(requestHeaders);
-        when(response.headers()).thenReturn(responseHeaders);
-        when(configuration.getOnRequestScript()).thenReturn(script);
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-
-        requestHeaders.forEach(entry -> assertThat(entry.getValue()).isEqualTo(responseHeaders.get(entry.getKey())));
-        verify(policyChain, times(1)).doNext(request, response);
-    }
-
-    @Test
-    public void shouldIterateOverParameters() {
-        MultiValueMap<String, String> multiMap = new LinkedMultiValueMap<>();
-        multiMap.add("A", "AValue");
-        multiMap.add("B", "BValue");
-        multiMap.add("C", "CValue");
-
-        HttpHeaders responseHeaders = HttpHeaders.create();
-
-        String script = "request.parameters.keySet().forEach(function(v) { response.headers.set(v, request.parameters.getFirst(v)); });";
-
-        when(request.parameters()).thenReturn(multiMap);
-        when(response.headers()).thenReturn(responseHeaders);
-        when(configuration.getOnRequestScript()).thenReturn(script);
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-
-        verify(policyChain, times(1)).doNext(request, response);
-    }
-
-    /**
-     * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#description
-     */
-    @Test
-    public void shouldModifyResponseHeaders() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(response.headers()).thenReturn(headers);
-        when(configuration.getOnRequestScript()).thenReturn(loadResource("modify_response_headers.js"));
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-
-        verify(headers, times(1)).remove("X-Powered-By");
-        verify(headers, times(1)).set("X-Gravitee-Gateway-Version", "0.14.0");
-        verify(policyChain, times(1)).doNext(request, response);
-    }
-
-    /**
-     * Issue: https://github.com/gravitee-io/issues/issues/2455
-     */
-    @Test
-    public void shouldSetContextAttribute() throws Exception {
-        final Map<String, Object> attributes = new HashMap<>();
-        when(executionContext.getAttributes()).thenReturn(attributes);
-
-        when(configuration.getOnRequestScript()).thenReturn(loadResource("set_context_attribute.js"));
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-
-        assertThat(attributes.get("anyKey")).isEqualTo(0);
-        verify(policyChain, times(1)).doNext(request, response);
-    }
-
-    /**
-     * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#onrequest_onresponse
-     * First run does not break the request.
-     */
-    @Test
-    public void shouldNotBreakRequest() throws Exception {
-        HttpHeaders headers = HttpHeaders.create();
-        when(request.headers()).thenReturn(headers);
-
-        when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
-
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-        verify(policyChain, times(1)).doNext(request, response);
-        assertThat(headers.containsKey("X-Groovy-Policy")).isTrue();
-        assertThat(headers.get("X-Groovy-Policy")).isEqualTo("ok");
-    }
-
-    /**
-     * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#onrequest_onresponse
-     * Second run must break because of HTTP headers
-     */
-    @Test
-    public void shouldBreakRequest() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(request.headers()).thenReturn(headers);
-        when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
-
-        headers.set("X-Gravitee-Break", "value");
-
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-        verify(policyChain, times(1))
-            .failWith(
-                argThat(
-                    result ->
-                        result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
-                        result.message().equals("Stop request processing due to X-Gravitee-Break header")
+        @BeforeEach
+        void beforeEach() {
+            //when(request.metrics()).thenReturn(Metrics.on(System.currentTimeMillis()).build());
+            when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
+            // Make sure we execute the javascript on the current thread.
+            Promise<Object> promise = new PromiseImpl<>();
+            doAnswer(
+                    i -> {
+                        ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
+                        ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
+                        return null;
+                    }
                 )
-            );
+                .when(vertx)
+                .executeBlocking(any(Handler.class), any(Handler.class));
+        }
+
+        @Nested
+        class Failures {
+
+            @Test
+            public void shouldFail_invalidScript() throws Exception {
+                when(configuration.getOnRequestScript()).thenReturn(loadResource("invalid_script.js"));
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+                verify(policyChain, times(1)).failWith(any(io.gravitee.policy.api.PolicyResult.class));
+            }
+        }
+
+        @Nested
+        class Success {
+
+            @Test
+            public void shouldIterateOverHeaders() {
+                HttpHeaders requestHeaders = HttpHeaders.create();
+                requestHeaders.set("A", "AValue");
+                requestHeaders.set("B", "BValue");
+                requestHeaders.set("C", "CValue");
+
+                HttpHeaders responseHeaders = HttpHeaders.create();
+
+                String script = "request.headers.forEach(function(v) { response.headers.set(v.key, v.value); });";
+
+                when(request.headers()).thenReturn(requestHeaders);
+                when(response.headers()).thenReturn(responseHeaders);
+                when(configuration.getOnRequestScript()).thenReturn(script);
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+                requestHeaders.forEach(entry -> assertThat(entry.getValue()).isEqualTo(responseHeaders.get(entry.getKey())));
+                verify(policyChain, times(1)).doNext(request, response);
+            }
+
+            @Test
+            public void shouldIterateOverParameters() {
+                MultiValueMap<String, String> multiMap = new LinkedMultiValueMap<>();
+                multiMap.add("A", "AValue");
+                multiMap.add("B", "BValue");
+                multiMap.add("C", "CValue");
+
+                HttpHeaders responseHeaders = HttpHeaders.create();
+
+                String script =
+                    "request.parameters.keySet().forEach(function(v) { response.headers.set(v, request.parameters.getFirst(v)); });";
+
+                when(request.parameters()).thenReturn(multiMap);
+                when(response.headers()).thenReturn(responseHeaders);
+                when(configuration.getOnRequestScript()).thenReturn(script);
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+                verify(policyChain, times(1)).doNext(request, response);
+            }
+
+            /**
+             * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#description
+             */
+            @Test
+            public void shouldModifyResponseHeaders() throws Exception {
+                HttpHeaders headers = spy(HttpHeaders.create());
+                when(response.headers()).thenReturn(headers);
+                when(configuration.getOnRequestScript()).thenReturn(loadResource("modify_response_headers.js"));
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+                verify(headers, times(1)).remove("X-Powered-By");
+                verify(headers, times(1)).set("X-Gravitee-Gateway-Version", "0.14.0");
+                verify(policyChain, times(1)).doNext(request, response);
+            }
+
+            /**
+             * Issue: https://github.com/gravitee-io/issues/issues/2455
+             */
+            @Test
+            public void shouldSetContextAttribute() throws Exception {
+                final Map<String, Object> attributes = new HashMap<>();
+                when(executionContext.getAttributes()).thenReturn(attributes);
+
+                when(configuration.getOnRequestScript()).thenReturn(loadResource("set_context_attribute.js"));
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+
+                assertThat(attributes.get("anyKey")).isEqualTo(0);
+                verify(policyChain, times(1)).doNext(request, response);
+            }
+
+            /**
+             * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#onrequest_onresponse
+             * First run does not break the request.
+             */
+            @Test
+            public void shouldNotBreakRequest() throws Exception {
+                HttpHeaders headers = HttpHeaders.create();
+                when(request.headers()).thenReturn(headers);
+
+                when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
+
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+                verify(policyChain, times(1)).doNext(request, response);
+                assertThat(headers.containsKey("X-Groovy-Policy")).isTrue();
+                assertThat(headers.get("X-Groovy-Policy")).isEqualTo("ok");
+            }
+
+            /**
+             * Doc example: https://docs.gravitee.io/apim_policies_javascript.html#onrequest_onresponse
+             * Second run must break because of HTTP headers
+             */
+            @Test
+            public void shouldBreakRequest() throws Exception {
+                HttpHeaders headers = spy(HttpHeaders.create());
+                when(request.headers()).thenReturn(headers);
+                when(configuration.getOnRequestScript()).thenReturn(loadResource("break_request.js"));
+
+                headers.set("X-Gravitee-Break", "value");
+
+                new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
+                verify(policyChain, times(1))
+                    .failWith(
+                        argThat(
+                            result ->
+                                result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
+                                result.message().equals("Stop request processing due to X-Gravitee-Break header")
+                        )
+                    );
+            }
+        }
     }
 
-    @Test
-    public void shouldBreakRequestContent() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(request.headers()).thenReturn(headers);
-        when(configuration.getOnRequestContentScript()).thenReturn(loadResource("break_request_content.js"));
+    @Nested
+    class OnRequestContent {
 
-        headers.set("X-Gravitee-Break", "value");
+        @Test
+        public void shouldReadJson() throws Exception {
+            HttpHeaders headers = spy(HttpHeaders.create());
+            when(request.headers()).thenReturn(headers);
 
-        new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
+            when(configuration.getOnRequestContentScript()).thenReturn(loadResource("read_json.js"));
+            String content = loadResource("read_json.json");
 
-        ReadWriteStream stream = new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
-        stream.end(Buffer.buffer());
+            ReadWriteStream stream = new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
+            stream.end(Buffer.buffer(content));
 
-        verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
-        verify(policyChain, times(1))
-            .streamFailWith(
-                argThat(
-                    result ->
-                        result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
-                        result.message().equals("Stop request content processing due to X-Gravitee-Break header")
-                )
-            );
-        verify(policyChain, never()).doNext(any(), any());
-    }
+            verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
+            verify(policyChain, never()).streamFailWith(any(PolicyResult.class));
+            verify(policyChain, never()).doNext(any(), any());
+        }
 
-    @Test
-    public void shouldReadJson() throws Exception {
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(request.headers()).thenReturn(headers);
+        @Test
+        public void shouldBreakRequestContent() throws Exception {
+            HttpHeaders headers = spy(HttpHeaders.create());
+            when(request.headers()).thenReturn(headers);
+            when(configuration.getOnRequestContentScript()).thenReturn(loadResource("break_request_content.js"));
 
-        when(configuration.getOnRequestContentScript()).thenReturn(loadResource("read_json.js"));
-        String content = loadResource("read_json.json");
+            headers.set("X-Gravitee-Break", "value");
 
-        ReadWriteStream stream = new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
-        stream.end(Buffer.buffer(content));
+            new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
 
-        verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
-        verify(policyChain, never()).streamFailWith(any(PolicyResult.class));
-        verify(policyChain, never()).doNext(any(), any());
-    }
+            ReadWriteStream stream = new JavascriptPolicy(configuration).onRequestContent(request, response, executionContext, policyChain);
+            stream.end(Buffer.buffer());
 
-    @Test
-    public void javaClassNotAllowed() {
-        String script = "var system = Java.type('java.lang.System')";
-
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void systemExitNotAllowed() {
-        String script = "exit(1);";
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void evalNotAllowed() {
-        String script = "eval('1 + 2')";
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void loadNotAllowed() {
-        String script = "load('lib.js');";
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void loadWithNewGlobalNotAllowed() {
-        String script = new StringBuilder("var script = 'var i = 0;';")
-            .append("function addition() {")
-            .append("return loadWithNewGlobal({ name: \"addition\", script: script });")
-            .append("}")
-            .append("addition();")
-            .toString();
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void quitNotAllowed() {
-        String script = "quit();";
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void independentExecutions() throws ScriptException {
-        String script1 = "var a = 1";
-        String script2 = "a";
-        JAVASCRIPT_ENGINE.eval(script1, new SimpleScriptContext());
-        assertThatThrownBy(() -> JAVASCRIPT_ENGINE.eval(script2)).isInstanceOf(ScriptException.class);
-    }
-
-    @Test
-    public void canCreateEngine() throws Exception {
-        final int port = wiremock.port();
-        final String path = "/unreachable";
-        stubFor(get(urlEqualTo(path)).willReturn(aResponse().withStatus(200)));
-
-        HttpHeaders headers = spy(HttpHeaders.create());
-        when(response.headers()).thenReturn(headers);
-        when(configuration.getOnRequestScript())
-            .thenReturn(
-                "this.engine.factory.scriptEngine.getFactory().getScriptEngine().eval(\"var Runtime=Java.type(\\\"java.lang.Runtime\\\"); Runtime.getRuntime().exec(\\\"curl http://localhost:" +
-                port +
-                path +
-                " \\\");\");"
-            );
-        new JavascriptPolicy(configuration).onRequest(request, response, executionContext, policyChain);
-
-        verify(0, getRequestedFor(urlEqualTo(path)));
+            verify(policyChain, never()).failWith(any(io.gravitee.policy.api.PolicyResult.class));
+            verify(policyChain, times(1))
+                .streamFailWith(
+                    argThat(
+                        result ->
+                            result.statusCode() == HttpStatusCode.INTERNAL_SERVER_ERROR_500 &&
+                            result.message().equals("Stop request content processing due to X-Gravitee-Break header")
+                    )
+                );
+            verify(policyChain, never()).doNext(any(), any());
+        }
     }
 
     private String loadResource(String resource) throws IOException {
