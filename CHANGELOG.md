@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.4.0...1.5.0) (2025-12-09)
+
+
+### Features
+
+* allow to use it with LLM & MCP ([eb1c425](https://github.com/gravitee-io/gravitee-policy-javascript/commit/eb1c425c6fb7ac2368d2a7231612aa308844e083))
+
 # [1.4.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.3.3...1.4.0) (2025-04-01)
 
 
