@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+    Copyright © 2015 The Gravitee team (http://gravitee.io)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
-            http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,26 +25,20 @@
     <version>1.5.0</version>
 
     <name>Gravitee.io APIM - Policy - Javascript</name>
-    <description>Run JavaScript scripts at any stage of request processing through the gateway</description>
+    <description>Run JavaScript scripts at any stage of request or message processing through the gateway</description>
 
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>21.0.0</version>
+        <version>23.5.0</version>
     </parent>
 
     <properties>
-        <gravitee-bom.version>3.0.8</gravitee-bom.version>
-        <gravitee-gateway-api.version>1.34.2</gravitee-gateway-api.version>
-        <gravitee-apim.version>3.18.28</gravitee-apim.version>
-        <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
-        <gravitee-common.version>1.27.0</gravitee-common.version>
-        <gravitee-expression-language.version>1.9.7</gravitee-expression-language.version>
-        <javascript.version>2.5.14</javascript.version>
-        <javascript-sandbox.version>1.27</javascript-sandbox.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
-        <maven-assembly-plugin.version>2.5.5</maven-assembly-plugin.version>
-        <asm.version>9.2</asm.version>
+        <gravitee-apim.version>4.8.0</gravitee-apim.version>
+        <gravitee-entrypoint-http-post.version>2.1.0</gravitee-entrypoint-http-post.version>
+        <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
+        <gravitee-reactor-message.version>7.0.0</gravitee-reactor-message.version>
+        <nashorn.version>15.7</nashorn.version>
         <publish-folder-path>graviteeio-apim/plugins/policies</publish-folder-path>
     </properties>
 
@@ -52,33 +46,11 @@
         <dependencies>
             <!-- Import bom to properly inherit all dependencies -->
             <dependency>
-                <groupId>io.gravitee</groupId>
-                <artifactId>gravitee-bom</artifactId>
-                <version>${gravitee-bom.version}</version>
+                <groupId>io.gravitee.apim</groupId>
+                <artifactId>gravitee-apim-bom</artifactId>
+                <version>${gravitee-apim.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
-            </dependency>
-
-            <!-- Force upgrade of asm to be aligned with asm version coming from gravitee -->
-            <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm</artifactId>
-                <version>${asm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm-commons</artifactId>
-                <version>${asm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm-tree</artifactId>
-                <version>${asm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm-util</artifactId>
-                <version>${asm.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -88,34 +60,29 @@
         <dependency>
             <groupId>io.gravitee.gateway</groupId>
             <artifactId>gravitee-gateway-api</artifactId>
-            <version>${gravitee-gateway-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.policy</groupId>
             <artifactId>gravitee-policy-api</artifactId>
-            <version>${gravitee-policy-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.common</groupId>
             <artifactId>gravitee-common</artifactId>
-            <version>${gravitee-common.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.el</groupId>
             <artifactId>gravitee-expression-language</artifactId>
-            <version>${gravitee-expression-language.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -145,6 +112,20 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Vert.x Reactive Extensions required by Gravitee Gateway API buffers -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-rx-java3</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Vert.x Web Client for testing -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Test scope -->
         <dependency>
             <groupId>junit</groupId>
@@ -159,6 +140,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.gravitee.apim.gateway</groupId>
             <artifactId>gravitee-apim-gateway-tests-sdk</artifactId>
             <version>${gravitee-apim.version}</version>
@@ -166,9 +153,30 @@
         </dependency>
 
         <dependency>
+            <groupId>io.gravitee.apim.plugin.entrypoint</groupId>
+            <artifactId>gravitee-apim-plugin-entrypoint-http-proxy</artifactId>
+            <version>${gravitee-apim.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.gravitee.apim.plugin.endpoint</groupId>
+            <artifactId>gravitee-apim-plugin-endpoint-http-proxy</artifactId>
+            <version>${gravitee-apim.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.gravitee.apim.plugin.endpoint</groupId>
+            <artifactId>gravitee-apim-plugin-endpoint-mock</artifactId>
+            <version>${gravitee-apim.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.openjdk.nashorn</groupId>
             <artifactId>nashorn-core</artifactId>
-            <version>15.3</version>
+            <version>${nashorn.version}</version>
         </dependency>
 
         <dependency>
@@ -182,6 +190,28 @@
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.graviteesource.entrypoint</groupId>
+            <artifactId>gravitee-entrypoint-http-get</artifactId>
+            <version>${gravitee-entrypoint-http-get.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.graviteesource.entrypoint</groupId>
+            <artifactId>gravitee-entrypoint-http-post</artifactId>
+            <version>${gravitee-entrypoint-http-post.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.graviteesource.reactor</groupId>
+            <artifactId>gravitee-reactor-message</artifactId>
+            <version>${gravitee-reactor-message.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -214,7 +244,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly-plugin.version}</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>
@@ -231,22 +260,11 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Override central-publishing-maven-plugin to version 0.9.0 to resolve Sonatype artifact push issue -->
             <plugin>
-                <groupId>com.hubspot.maven.plugins</groupId>
-                <artifactId>prettier-maven-plugin</artifactId>
-                <version>0.12</version>
-                <configuration>
-                    <nodeVersion>12.13.0</nodeVersion>
-                    <prettierJavaVersion>1.0.1</prettierJavaVersion>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.9.0</version>
             </plugin>
         </plugins>
     </build>

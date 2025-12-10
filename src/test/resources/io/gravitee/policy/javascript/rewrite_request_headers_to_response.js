@@ -1,0 +1,1 @@
+request.headers.forEach(function(v) { response.headers.set(v.key, v.value); });

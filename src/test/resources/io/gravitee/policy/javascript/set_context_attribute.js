@@ -1,3 +1,1 @@
-context.attributes.anyKey = 0;
-
-'done';
+context.attributes.count = 100;

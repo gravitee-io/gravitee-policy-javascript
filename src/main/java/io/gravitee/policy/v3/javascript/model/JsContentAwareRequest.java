@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,32 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.javascript.model.js;
+package io.gravitee.policy.v3.javascript.model;
 
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpVersion;
 import io.gravitee.common.util.MultiValueMap;
 import io.gravitee.gateway.api.Request;
-import io.gravitee.gateway.api.http.HttpHeaders;
+import io.gravitee.policy.javascript.model.js.JsHttpHeaders;
 import io.gravitee.reporter.api.http.Metrics;
 import javax.net.ssl.SSLSession;
+import lombok.Getter;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class JsRequest {
+public class JsContentAwareRequest {
 
     private final Request request;
+
+    @Getter
     private final String content;
 
-    public JsRequest(Request request, String content) {
+    public JsContentAwareRequest(Request request, String content) {
         this.request = request;
         this.content = content;
-    }
-
-    public String getContent() {
-        return content;
     }
 
     public String id() {
@@ -101,11 +100,11 @@ public class JsRequest {
         return this.parameters();
     }
 
-    public HttpHeaders headers() {
-        return request.headers();
+    public JsHttpHeaders headers() {
+        return new JsHttpHeaders(request.headers());
     }
 
-    public HttpHeaders getHeaders() {
+    public JsHttpHeaders getHeaders() {
         return this.headers();
     }
 

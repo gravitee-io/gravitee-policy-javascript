@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.javascript.model.js;
+package io.gravitee.policy.v3.javascript.model;
 
 import io.gravitee.gateway.api.Response;
-import io.gravitee.gateway.api.http.HttpHeaders;
+import io.gravitee.policy.javascript.model.js.JsHttpHeaders;
+import lombok.Getter;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class JsResponse {
+public class JsContentAwareResponse {
 
     private final Response response;
+
+    @Getter
     private final String content;
 
-    public JsResponse(Response response, String content) {
+    public JsContentAwareResponse(Response response, String content) {
         this.response = response;
         this.content = content;
     }
@@ -52,15 +55,11 @@ public class JsResponse {
         response.reason(message);
     }
 
-    public HttpHeaders headers() {
-        return response.headers();
+    public JsHttpHeaders headers() {
+        return new JsHttpHeaders(response.headers());
     }
 
-    public HttpHeaders getHeaders() {
+    public JsHttpHeaders getHeaders() {
         return this.headers();
-    }
-
-    public String getContent() {
-        return content;
     }
 }
