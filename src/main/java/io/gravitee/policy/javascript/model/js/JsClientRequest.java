@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,12 +17,14 @@ package io.gravitee.policy.javascript.model.js;
 
 import io.vertx.core.MultiMap;
 import java.util.Map;
+import lombok.Data;
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
+@Data
 public class JsClientRequest {
 
     private String url;
@@ -55,36 +57,8 @@ public class JsClientRequest {
         this.payload = payload;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public MultiMap getHeaders() {
-        return headers;
-    }
-
     public void setHeaders(Map<String, Object> headers) {
         this.headers = toMultiMap(headers);
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public void setPayload(String payload) {
-        this.payload = payload;
     }
 
     private MultiMap toMultiMap(Map<String, Object> map) {

@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 package io.gravitee.policy.javascript.model.js;
 
 import java.util.concurrent.CompletableFuture;
+import lombok.Getter;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
@@ -25,6 +26,7 @@ public class JsHttpExchange {
 
     private CompletableFuture<JsClientResponse> future;
 
+    @Getter
     private JsClientResponse response;
 
     private Throwable error;
@@ -39,10 +41,6 @@ public class JsHttpExchange {
         } catch (Exception e) {
             error = e;
         }
-    }
-
-    public JsClientResponse getResponse() {
-        return response;
     }
 
     public JsClientResponse response() {

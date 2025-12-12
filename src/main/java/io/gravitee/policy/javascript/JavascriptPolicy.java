@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,319 +15,217 @@
  */
 package io.gravitee.policy.javascript;
 
-import static io.gravitee.policy.javascript.JavascriptInitializer.HTTP_CLIENT;
-import static io.gravitee.policy.javascript.JavascriptInitializer.JAVASCRIPT_ENGINE;
+import static io.gravitee.common.http.HttpStatusCode.INTERNAL_SERVER_ERROR_500;
+import static io.gravitee.policy.javascript.eval.ScriptContextBindings.RESULT_VARIABLE_NAME;
+import static io.gravitee.policy.javascript.eval.ScriptContextFactory.createHttpMessageScriptContext;
+import static io.gravitee.policy.javascript.eval.ScriptContextFactory.createHttpPlainScriptContext;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.gravitee.gateway.api.ExecutionContext;
-import io.gravitee.gateway.api.Request;
-import io.gravitee.gateway.api.Response;
 import io.gravitee.gateway.api.buffer.Buffer;
-import io.gravitee.gateway.api.http.stream.TransformableRequestStreamBuilder;
-import io.gravitee.gateway.api.http.stream.TransformableResponseStreamBuilder;
-import io.gravitee.gateway.api.stream.ReadWriteStream;
-import io.gravitee.gateway.api.stream.exception.TransformationException;
-import io.gravitee.policy.api.PolicyChain;
-import io.gravitee.policy.api.annotations.OnRequest;
-import io.gravitee.policy.api.annotations.OnRequestContent;
-import io.gravitee.policy.api.annotations.OnResponse;
-import io.gravitee.policy.api.annotations.OnResponseContent;
+import io.gravitee.gateway.reactive.api.ExecutionFailure;
+import io.gravitee.gateway.reactive.api.context.http.HttpMessageExecutionContext;
+import io.gravitee.gateway.reactive.api.context.http.HttpPlainExecutionContext;
+import io.gravitee.gateway.reactive.api.message.Message;
+import io.gravitee.gateway.reactive.api.policy.http.HttpPolicy;
+import io.gravitee.policy.javascript.PolicyResult.State;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
-import io.gravitee.policy.javascript.model.js.*;
-import io.vertx.core.Vertx;
-import java.io.StringWriter;
-import java.util.concurrent.ExecutionException;
-import javax.script.*;
-import jdk.dynalink.beans.StaticClass;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
+import java.util.Map;
+import java.util.function.Consumer;
+import javax.script.ScriptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
- * @author GraviteeSource Team
- */
-public class JavascriptPolicy {
+public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.JavascriptPolicy implements HttpPolicy {
 
     private static final Logger logger = LoggerFactory.getLogger(JavascriptPolicy.class);
 
-    private static final String REQUEST_VARIABLE_NAME = "request";
-    private static final String RESPONSE_VARIABLE_NAME = "response";
-    private static final String CONTEXT_VARIABLE_NAME = "context";
-    private static final String RESULT_VARIABLE_NAME = "result";
-    private static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
-    private static final String REQUEST_CLASS_VARIABLE_NAME = "Request";
-    private static final String STATE_CLASS_VARIABLE_NAME = "State";
-
-    private final JavascriptPolicyConfiguration configuration;
+    /**
+     * @see JavascriptPolicyConfiguration#getScripts()
+     */
+    private final Flowable<String> scriptFlowable;
 
     public JavascriptPolicy(JavascriptPolicyConfiguration configuration) {
-        this.configuration = configuration;
+        super(configuration);
+        scriptFlowable = Flowable.fromIterable(configuration.getScripts());
     }
 
-    @OnRequest
-    public void onRequest(Request request, Response response, ExecutionContext executionContext, PolicyChain policyChain) {
-        executeScript(request, response, executionContext, policyChain, configuration.getOnRequestScript());
+    @Override
+    public String id() {
+        return "policy-javascript";
     }
 
-    @OnResponse
-    public void onResponse(Request request, Response response, ExecutionContext executionContext, PolicyChain policyChain) {
-        executeScript(request, response, executionContext, policyChain, configuration.getOnResponseScript());
-    }
-
-    @OnResponseContent
-    public ReadWriteStream onResponseContent(
-        Request request,
-        Response response,
-        ExecutionContext executionContext,
-        PolicyChain policyChain
-    ) {
-        String script = configuration.getOnResponseContentScript();
-
-        if (script != null && !script.trim().isEmpty()) {
-            return TransformableResponseStreamBuilder
-                .on(response)
-                .chain(policyChain)
-                .transform(
-                    buffer -> {
-                        try {
-                            final String content = executeStreamScript(
-                                new JsRequest(request, null),
-                                new JsResponse(response, buffer.toString()),
-                                new JsExecutionContext(executionContext),
-                                script
-                            );
-                            return Buffer.buffer(content);
-                        } catch (PolicyFailureException ex) {
-                            if (ex.getResult().getContentType() != null) {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError(),
-                                        ex.getResult().getContentType()
-                                    )
-                                );
-                            } else {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError()
-                                    )
-                                );
-                            }
-                        } catch (Throwable t) {
-                            logger.error("Unable to run Javascript script", t);
-                            throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
-                        }
-                        return null;
-                    }
-                )
-                .build();
+    @Override
+    public Completable onRequest(final HttpPlainExecutionContext ctx) {
+        if (
+            isBlank(configuration.getScript()) &&
+            isBlank(configuration.getOnRequestScript()) &&
+            isBlank(configuration.getOnRequestContentScript())
+        ) {
+            return Completable.complete();
         }
 
-        return null;
-    }
-
-    @OnRequestContent
-    public ReadWriteStream onRequestContent(
-        Request request,
-        Response response,
-        ExecutionContext executionContext,
-        PolicyChain policyChain
-    ) {
-        String script = configuration.getOnRequestContentScript();
-
-        if (script != null && !script.trim().isEmpty()) {
-            return TransformableRequestStreamBuilder
-                .on(request)
-                .chain(policyChain)
-                .transform(
-                    buffer -> {
-                        try {
-                            final String content = executeStreamScript(
-                                new JsRequest(request, buffer.toString()),
-                                new JsResponse(response, null),
-                                new JsExecutionContext(executionContext),
-                                script
-                            );
-
-                            return Buffer.buffer(content);
-                        } catch (PolicyFailureException ex) {
-                            if (ex.getResult().getContentType() != null) {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError(),
-                                        ex.getResult().getContentType()
-                                    )
-                                );
-                            } else {
-                                policyChain.streamFailWith(
-                                    io.gravitee.policy.api.PolicyResult.failure(
-                                        ex.getResult().getKey(),
-                                        ex.getResult().getCode(),
-                                        ex.getResult().getError()
-                                    )
-                                );
-                            }
-                        } catch (Throwable t) {
-                            logger.error("Unable to run Javascript script", t);
-                            throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
-                        }
-                        return null;
-                    }
-                )
-                .build();
-        }
-
-        return null;
-    }
-
-    private String executeScript(
-        Request request,
-        Response response,
-        ExecutionContext executionContext,
-        PolicyChain policyChain,
-        String script
-    ) {
-        if (script == null || script.trim().isEmpty()) {
-            policyChain.doNext(request, response);
-        } else {
-            // Prepare binding
-            final ScriptContext scriptContext = createScriptContext(
-                new JsRequest(request, null),
-                new JsResponse(response, null),
-                new JsExecutionContext(executionContext)
-            );
-
-            executionContext
-                .getComponent(Vertx.class)
-                .executeBlocking(
-                    event -> {
-                        try {
-                            eval(script, scriptContext);
-                            event.complete();
-                        } catch (Exception e) {
-                            event.fail(e);
-                        }
-                    },
-                    event -> {
-                        if (event.failed()) {
-                            logger.error("Unable to run Javascript script", event.cause());
-                            policyChain.failWith(io.gravitee.policy.api.PolicyResult.failure(event.cause().getMessage()));
-                        } else {
-                            PolicyResult result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
-
-                            if (result.getState() == PolicyResult.State.SUCCESS) {
-                                policyChain.doNext(request, response);
-                            } else {
-                                if (result.getContentType() != null) {
-                                    policyChain.failWith(
-                                        io.gravitee.policy.api.PolicyResult.failure(
-                                            result.getKey(),
-                                            result.getCode(),
-                                            result.getError(),
-                                            result.getContentType()
-                                        )
-                                    );
-                                } else {
-                                    policyChain.failWith(
-                                        io.gravitee.policy.api.PolicyResult.failure(result.getKey(), result.getCode(), result.getError())
-                                    );
-                                }
-                            }
-                        }
-                    }
+        if (
+            (isNotBlank(configuration.getScript()) && configuration.isReadContent()) ||
+            isNotBlank(configuration.getOnRequestContentScript())
+        ) {
+            Consumer<Buffer> onContentOverride = overridenContentBuffer -> ctx.request().contentLength(overridenContentBuffer.length());
+            return ctx
+                .request()
+                .onBody(requestBodyBuffer ->
+                    requestBodyBuffer
+                        .defaultIfEmpty(Buffer.buffer())
+                        .flatMapMaybe(buffer ->
+                            onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, buffer, null), onContentOverride)
+                        )
                 );
         }
-
-        return null;
+        if (isNotBlank(configuration.getScript())) {
+            return runScript(ctx, configuration.getScript());
+        }
+        return runScript(ctx, configuration.getOnRequestScript());
     }
 
-    private String executeStreamScript(JsRequest request, JsResponse response, JsExecutionContext executionContext, String script)
-        throws PolicyFailureException {
-        // Prepare binding
-        final ScriptContext scriptContext = createScriptContext(request, response, executionContext);
-        final PolicyResult result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
-
-        String content;
-
-        // And run script
-        try {
-            content = eval(script, scriptContext);
-        } catch (Exception e) {
-            result.setState(PolicyResult.State.FAILURE);
-            result.setError(e.getMessage());
-            throw new PolicyFailureException(result);
+    @Override
+    public Completable onResponse(final HttpPlainExecutionContext ctx) {
+        if (
+            isBlank(configuration.getScript()) &&
+            isBlank(configuration.getOnResponseScript()) &&
+            isBlank(configuration.getOnResponseContentScript())
+        ) {
+            return Completable.complete();
         }
 
-        if (result.getState() == PolicyResult.State.FAILURE) {
-            throw new PolicyFailureException(result);
+        if (
+            (isNotBlank(configuration.getScript()) && configuration.isReadContent()) ||
+            isNotBlank(configuration.getOnResponseContentScript())
+        ) {
+            Consumer<Buffer> onContentOverride = overridenContentBuffer -> ctx.response().contentLength(overridenContentBuffer.length());
+            return ctx
+                .response()
+                .onBody(responseBodyBuffer ->
+                    responseBodyBuffer
+                        .defaultIfEmpty(Buffer.buffer())
+                        .flatMapMaybe(buffer ->
+                            onHttpContent(ctx, buffer, createHttpPlainScriptContext(ctx, null, buffer), onContentOverride)
+                        )
+                );
+        }
+        if (isNotBlank(configuration.getScript())) {
+            return runScript(ctx, configuration.getScript());
+        }
+        return runScript(ctx, configuration.getOnResponseScript());
+    }
+
+    @Override
+    public Completable onMessageRequest(final HttpMessageExecutionContext ctx) {
+        return ctx.request().onMessage(message -> runScript(ctx, message));
+    }
+
+    @Override
+    public Completable onMessageResponse(final HttpMessageExecutionContext ctx) {
+        return ctx.response().onMessage(message -> runScript(ctx, message));
+    }
+
+    private Completable runScript(final HttpPlainExecutionContext ctx, String script) {
+        var scriptContext = createHttpPlainScriptContext(ctx);
+
+        return scriptEvaluator
+            .evalRx(script, scriptContext)
+            .ignoreElement()
+            .onErrorResumeNext(e -> {
+                logger.error("An error occurred while executing Javascript script", e);
+                return ctx.interruptWith(createExecutionFailureFromThrowable(e));
+            })
+            .andThen(
+                Completable.defer(() -> {
+                    var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                    return handleResult(ctx, result);
+                })
+            );
+    }
+
+    private static Completable handleResult(HttpPlainExecutionContext ctx, PolicyResult result) {
+        if (result.getState() == State.FAILURE) {
+            return ctx.interruptWith(
+                new ExecutionFailure(result.getCode()).key(result.getKey()).message(result.getError()).contentType(result.getContentType())
+            );
         }
 
-        return content;
+        return Completable.complete();
     }
 
-    private String eval(String script, ScriptContext scriptContext) throws ScriptException, ExecutionException, InterruptedException {
-        // see https://github.com/javadelight/delight-nashorn-sandbox/issues/73
-        final String blockAccessToEngine =
-            "Object.defineProperty(this, 'engine', {});" + "Object.defineProperty(this, 'context', {});delete this.__noSuchProperty__;";
-
-        Object ret = JAVASCRIPT_ENGINE.eval(blockAccessToEngine + script, scriptContext);
-
-        final JsHttpClient httpClient = (JsHttpClient) scriptContext.getAttribute("httpClient");
-        httpClient.shutDown();
-
-        // Note: here we can do scriptContext.getWriter().toString() if we want to retrieve the printed logs but we won't display them in the gateway logs for now.
-        return (ret instanceof String) ? (String) ret : null;
+    private static ExecutionFailure createExecutionFailureFromThrowable(Throwable e) {
+        return new ExecutionFailure(INTERNAL_SERVER_ERROR_500)
+            .key("JAVASCRIPT_EXECUTION_FAILURE")
+            .parameters(Map.of("exception", e))
+            .message("Internal Server Error");
     }
 
-    private static class PolicyFailureException extends Exception {
+    private Maybe<Buffer> onHttpContent(
+        HttpPlainExecutionContext ctx,
+        Buffer bodyBuffer,
+        ScriptContext scriptContext,
+        Consumer<Buffer> onContentOverride
+    ) {
+        return scriptFlowable
+            .concatMapMaybe(script -> runContentAwareScript(ctx, scriptContext, script))
+            .lastElement()
+            .filter(jsBuffer -> configuration.isOverrideContent())
+            .doOnSuccess(onContentOverride::accept)
+            .switchIfEmpty(Maybe.just(bodyBuffer));
+    }
 
-        private final PolicyResult result;
+    private Maybe<Buffer> runContentAwareScript(HttpPlainExecutionContext ctx, ScriptContext scriptContext, String script) {
+        return scriptEvaluator
+            .evalRx(script, scriptContext)
+            .onErrorResumeNext(e -> {
+                logger.error("An error occurred while executing Javascript script", e);
+                return ctx.interruptBodyWith(createExecutionFailureFromThrowable(e));
+            })
+            .flatMap(output -> {
+                var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                return handleResult(ctx, output, result);
+            });
+    }
 
-        PolicyFailureException(PolicyResult result) {
-            this.result = result;
+    private static Maybe<Buffer> handleResult(HttpPlainExecutionContext ctx, Object output, PolicyResult result) {
+        if (result.getState() == State.FAILURE) {
+            return ctx.interruptBodyWith(
+                new ExecutionFailure(result.getCode()).key(result.getKey()).message(result.getError()).contentType(result.getContentType())
+            );
         }
 
-        public PolicyResult getResult() {
-            return result;
+        return Maybe.just(Buffer.buffer(output.toString()));
+    }
+
+    private Maybe<Message> runScript(final HttpMessageExecutionContext ctx, Message message) {
+        var script = configuration.getScript();
+        var scriptContext = createHttpMessageScriptContext(ctx, message);
+
+        return scriptEvaluator
+            .evalRx(script, scriptContext)
+            .onErrorResumeNext(e -> ctx.interruptMessageWith(createExecutionFailureFromThrowable(e)))
+            .flatMap(output -> {
+                var result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                return handleResult(ctx, message, output, result);
+            });
+    }
+
+    private Maybe<Message> handleResult(HttpMessageExecutionContext ctx, Message message, Object output, PolicyResult result) {
+        if (result.getState() == State.FAILURE) {
+            return ctx.interruptMessageWith(
+                new ExecutionFailure(result.getCode()).key(result.getKey()).message(result.getError()).contentType(result.getContentType())
+            );
         }
-    }
 
-    private ScriptContext createScriptContext(JsRequest request, JsResponse response, JsExecutionContext executionContext) {
-        // Prepare binding
-        Bindings bindings = JAVASCRIPT_ENGINE.createBindings();
-        sanitizeBindings(bindings);
-        bindings.put(REQUEST_VARIABLE_NAME, request);
-        bindings.put(RESPONSE_VARIABLE_NAME, response);
-        bindings.put(CONTEXT_VARIABLE_NAME, executionContext);
-        bindings.put(RESULT_VARIABLE_NAME, new PolicyResult());
+        if (configuration.isOverrideContent()) {
+            message.content(Buffer.buffer(output.toString()));
+        }
 
-        bindings.put(STATE_CLASS_VARIABLE_NAME, StaticClass.forClass(PolicyResult.State.class));
-        bindings.put(REQUEST_CLASS_VARIABLE_NAME, StaticClass.forClass(JsClientRequest.class));
-        bindings.put(HTTP_CLIENT_VARIABLE_NAME, new JsHttpClient(HTTP_CLIENT));
-
-        final SimpleScriptContext scriptContext = new SimpleScriptContext();
-        final StringWriter printWriter = new StringWriter();
-        final StringWriter errorWriter = new StringWriter();
-
-        scriptContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        scriptContext.setWriter(printWriter);
-        scriptContext.setErrorWriter(errorWriter);
-
-        return scriptContext;
-    }
-
-    protected void sanitizeBindings(Bindings bindings) {
-        bindings.remove("quit");
-        bindings.remove("exit");
-        bindings.remove("print");
-        bindings.remove("echo");
-        bindings.remove("readFully");
-        bindings.remove("readLine");
-        bindings.remove("load");
-        bindings.remove("loadWithNewGlobal");
+        return Maybe.just(message);
     }
 }

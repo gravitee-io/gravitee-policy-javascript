@@ -3,7 +3,7 @@ if (request.headers.containsKey('X-Gravitee-Break')) {
     result.code = 500
     result.error = 'Stop request content processing due to X-Gravitee-Break header'
 } else {
-    request.headers.set('X-Groovy-Policy', 'ok');
+    request.headers.set('X-Javascript-Policy', 'ok');
 }
 
 request.content
