@@ -580,6 +580,28 @@ spec:
 
 ## Changelog
 
+### [2.0.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.5.0...2.0.0) (2025-12-12)
+
+
+##### Bug Fixes
+
+* few project changes ([71b8ddc](https://github.com/gravitee-io/gravitee-policy-javascript/commit/71b8ddc16badb5d72ab0fd59290fa77df65c1935))
+* override version of central-publishing-maven-plugin with 0.9.0 ([2d28389](https://github.com/gravitee-io/gravitee-policy-javascript/commit/2d283893cda4ab8a0ee31449ef969a05aa19bdff))
+* rewrite documentation to doc-gen ([#46](https://github.com/gravitee-io/gravitee-policy-javascript/issues/46)) ([90f09f4](https://github.com/gravitee-io/gravitee-policy-javascript/commit/90f09f4ec6d934eb01a41a933f8be1fc177cb615))
+
+
+##### Features
+
+* add v4 messaging support ([#45](https://github.com/gravitee-io/gravitee-policy-javascript/issues/45)) ([6ea67fe](https://github.com/gravitee-io/gravitee-policy-javascript/commit/6ea67fe1e3b441f0ca7bb588355314e4a7be592d))
+* enable for LLM & MCP Proxy API ([#49](https://github.com/gravitee-io/gravitee-policy-javascript/issues/49)) ([63f97f4](https://github.com/gravitee-io/gravitee-policy-javascript/commit/63f97f4564b21b39f19ffec3f2eff10a57bccffb))
+
+
+##### BREAKING CHANGES
+
+* requires APIM 4.8+
+
+Co-authored-by: Michal Balinski <michal@incubly.com>
+
 ### [2.0.0-alpha.5](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0-alpha.4...2.0.0-alpha.5) (2025-11-14)
 
 
