@@ -249,9 +249,11 @@ You will find below the main differences between JS scripts coming from **Apigee
 | Playing with request / response phases | ```if (context.flow=="PROXY_RESP_FLOW") { // do something; }``` | Use a script on each phase | Phases are not exactly the same and Gravitee does not allow a single script on different phases. You must define one script per phase or leave the field blank if no script is necessary. |
 | Timeout | `timeLimit` configuration at JavaScript policy level | | The timeout is not supported for now. |
 | Manage errors | ? | ```result.state = State.FAILURE; result.code = 400; result.error = '{"error":"My specific error message","code":"MY_ERROR_CODE"}'; result.contentType = 'application/json';``` | |
-| Http call | `httpClient.get("http://example.com", callback);` | `httpClient.get("http://example.com", callback);` | ⚠️ This feature is a draft and may change or be unsupported in the final version. |
+| Http call | `httpClient.get("http://example.com", callback);` | `httpClient.get("http://example.com", callback);` | ⚠️ **DEPRECATED**: This feature will be removed in a future release. Use the **HTTP Callout** policy instead for making HTTP calls. |
 
 ## Compatibility and Deprecation Notes
+
+### Deprecated Script Properties
 
 The following properties of the JavaScript policy are **deprecated** and will be removed in future releases:
 
@@ -262,13 +264,29 @@ The following properties of the JavaScript policy are **deprecated** and will be
 
 Use the new configuration format, which allows defining a single **script** along with additional options such as *Read content* and *Override content*.
 
-If you created a v4 HTTP API with the JavaScript policy (version <= 1.4.0), `onRequestScript` and `onResponseScript` will still execute during the request and response phases respectively.  
+If you created a v4 HTTP API with the JavaScript policy (version <= 1.4.0), `onRequestScript` and `onResponseScript` will still execute during the request and response phases respectively.
 It is strongly recommended to migrate your API to the new configuration format and use the `script` property instead.
 
 Because `onRequestScript` and `onResponseScript` are no longer displayed due to deprecation, you can retrieve their values via the Management API (e.g., [listing plans associated with the given API](https://gravitee-io-labs.github.io/mapi-v1-docs/#tag/api-plans/get/v1/organizations/{orgId}/environments/{envId}/apis/{api}/plans)) or using the export feature in the Gravitee UI under **API Configuration → General** section.
 
-> **Note:**  
+> **Note:**
 > The easiest migration path is:
 > 1. Create a new policy with the copied script.
 > 2. Delete the old one.
-> 3. Save and deploy the API.  
+> 3. Save and deploy the API.
+
+### HttpClient Deprecation
+
+⚠️ **DEPRECATED**: The `httpClient` object available in JavaScript scripts is **deprecated** and will be removed in a future release.
+
+**What's changing:**
+- The `httpClient.get()`, `httpClient.post()`, and other HTTP methods will no longer be available within JavaScript policy scripts.
+
+**Migration path:**
+- Use the **HTTP Callout** policy instead for making HTTP calls from your API flows.
+
+**Why this change:**
+- The current `httpClient` implementation has security and performance limitations.
+- The **HTTP Callout** policy provides better control, security, and monitoring capabilities for external HTTP calls.
+
+If you are currently using `httpClient` in your JavaScript scripts, please plan to migrate to the recommended approach to ensure compatibility with future versions.  
