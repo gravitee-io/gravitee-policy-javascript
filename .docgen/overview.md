@@ -7,6 +7,7 @@ This policy is applicable to the following API types:
 - v4 message APIs
 - v4 LLM proxy
 - v4 MCP proxy
+- v4 A2A proxy
 
 **Note:** The JavaScript policy is not supported by v4 TCP or Native APIs.
 
