@@ -81,30 +81,11 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
     private static void initHttpClient() {
         if (vertx != null) {
             final HttpClientOptions options = new HttpClientOptions()
-                .setTrustAll(true)
-                .setVerifyHost(false)
                 .setMaxPoolSize(30)
                 .setKeepAlive(false)
                 .setTcpKeepAlive(false)
-                .setConnectTimeout(3000);
-
-            // TODO: check how to manage the proxy options.
-            //        if ((useSystemProxy != null && useSystemProxy == Boolean.TRUE) || (useSystemProxy == null && this.isProxyConfigured)) {
-            //            ProxyOptions proxyOptions = new ProxyOptions();
-            //            proxyOptions.setType(ProxyType.valueOf(httpClientProxyType));
-            //            if (HTTPS_SCHEME.equals(uriScheme)) {
-            //                proxyOptions.setHost(httpClientProxyHttpsHost);
-            //                proxyOptions.setPort(httpClientProxyHttpsPort);
-            //                proxyOptions.setUsername(httpClientProxyHttpsUsername);
-            //                proxyOptions.setPassword(httpClientProxyHttpsPassword);
-            //            } else {
-            //                proxyOptions.setHost(httpClientProxyHttpHost);
-            //                proxyOptions.setPort(httpClientProxyHttpPort);
-            //                proxyOptions.setUsername(httpClientProxyHttpUsername);
-            //                proxyOptions.setPassword(httpClientProxyHttpPassword);
-            //            }
-            //            options.setProxyOptions(proxyOptions);
-            //        }
+                .setConnectTimeout(3000)
+                .setHttp2ClearTextUpgrade(false);
 
             HTTP_CLIENT = vertx.createHttpClient(options);
         }
