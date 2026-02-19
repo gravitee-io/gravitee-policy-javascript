@@ -582,6 +582,13 @@ spec:
 
 ## Changelog
 
+### [2.1.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0...2.1.0) (2026-02-19)
+
+
+##### Features
+
+* enable A2A proxy ([dad230f](https://github.com/gravitee-io/gravitee-policy-javascript/commit/dad230f88abcd0a61f8c026ee5fa687f047c8b98))
+
 ### [2.0.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/1.5.0...2.0.0) (2025-12-12)
 
 
