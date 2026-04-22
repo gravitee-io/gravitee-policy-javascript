@@ -40,16 +40,14 @@ import io.gravitee.policy.v3.javascript.model.JsContentAwareResponse;
 import io.gravitee.policy.v3.javascript.model.JsExecutionContext;
 import io.vertx.core.Vertx;
 import javax.script.ScriptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
+@CustomLog
 public class JavascriptPolicy {
-
-    private static final Logger logger = LoggerFactory.getLogger(JavascriptPolicy.class);
 
     protected final JavascriptPolicyConfiguration configuration;
     protected final ScriptEvaluator scriptEvaluator;
@@ -110,7 +108,7 @@ public class JavascriptPolicy {
                             );
                         }
                     } catch (Throwable t) {
-                        logger.error("Unable to run Javascript script", t);
+                        log.error("Unable to run Javascript script", t);
                         throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
                     }
                     return null;
@@ -163,7 +161,7 @@ public class JavascriptPolicy {
                             );
                         }
                     } catch (Throwable t) {
-                        logger.error("Unable to run Javascript script", t);
+                        log.error("Unable to run Javascript script", t);
                         throw new TransformationException("Unable to run Javascript script: " + t.getMessage(), t);
                     }
                     return null;
@@ -199,7 +197,7 @@ public class JavascriptPolicy {
                 })
                 .onComplete(event -> {
                     if (event.failed()) {
-                        logger.error("Unable to run Javascript script", event.cause());
+                        log.error("Unable to run Javascript script", event.cause());
                         policyChain.failWith(io.gravitee.policy.api.PolicyResult.failure(event.cause().getMessage()));
                     } else {
                         PolicyResult result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);

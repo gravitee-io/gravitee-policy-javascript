@@ -50,6 +50,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.helpers.NOPLogger;
 
 @ExtendWith(MockitoExtension.class)
 class JavascriptPolicyV4Test {
@@ -82,6 +83,7 @@ class JavascriptPolicyV4Test {
         lenient().when(ctx.getAttributes()).thenReturn(attributes);
         lenient().when(ctx.request()).thenReturn(request);
         lenient().when(ctx.response()).thenReturn(response);
+        lenient().when(ctx.withLogger(any())).thenReturn(NOPLogger.NOP_LOGGER);
         lenient().when(request.headers()).thenReturn(HttpHeaders.create());
         lenient().when(response.headers()).thenReturn(HttpHeaders.create());
         lenient()
