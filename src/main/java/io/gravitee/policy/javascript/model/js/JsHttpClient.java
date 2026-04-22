@@ -18,11 +18,11 @@ package io.gravitee.policy.javascript.model.js;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ConcurrentHashSet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class JsHttpClient {
 
     public JsHttpClient(HttpClient httpClient) {
         this.httpClient = httpClient;
-        this.futures = new ConcurrentHashSet<>();
+        this.futures = ConcurrentHashMap.newKeySet();
     }
 
     public JsHttpExchange get(String url) {

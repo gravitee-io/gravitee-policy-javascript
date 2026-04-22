@@ -21,6 +21,7 @@ import io.gravitee.policy.api.PolicyContextProviderAware;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.PoolOptions;
 import javax.script.*;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
@@ -83,10 +84,11 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
             final HttpClientOptions options = new HttpClientOptions()
                 .setTrustAll(true)
                 .setVerifyHost(false)
-                .setMaxPoolSize(30)
                 .setKeepAlive(false)
                 .setTcpKeepAlive(false)
                 .setConnectTimeout(3000);
+
+            final PoolOptions poolOptions = new PoolOptions().setHttp1MaxSize(30);
 
             // TODO: check how to manage the proxy options.
             //        if ((useSystemProxy != null && useSystemProxy == Boolean.TRUE) || (useSystemProxy == null && this.isProxyConfigured)) {
@@ -106,7 +108,7 @@ public class JavascriptInitializer implements PolicyContext, PolicyContextProvid
             //            options.setProxyOptions(proxyOptions);
             //        }
 
-            HTTP_CLIENT = vertx.createHttpClient(options);
+            HTTP_CLIENT = vertx.createHttpClient(options, poolOptions);
         }
     }
 }
