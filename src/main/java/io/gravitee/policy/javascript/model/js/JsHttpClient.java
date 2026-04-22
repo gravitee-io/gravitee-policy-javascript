@@ -25,16 +25,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
 public class JsHttpClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(JsHttpClient.class);
 
     private final HttpClient httpClient;
     private final Set<CompletableFuture<JsClientResponse>> futures;
