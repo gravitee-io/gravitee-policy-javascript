@@ -1,7 +1,10 @@
 rows:
     - data:
+          plugin: "3.x"
+          apim: "4.12.x and upper"
+    - data:
           plugin: "2.x"
-          apim: "4.7.x and above"
+          apim: "4.7.x to 4.11.x"
     - data:
           plugin: "1.x"
-          apim: "3.18.x and above"
+          apim: "3.18.x to 4.6.x"
