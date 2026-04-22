@@ -162,7 +162,8 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
         return new ExecutionFailure(INTERNAL_SERVER_ERROR_500)
             .key("JAVASCRIPT_EXECUTION_FAILURE")
             .parameters(Map.of("exception", e))
-            .message("Internal Server Error");
+            .message("Internal Server Error")
+            .cause(e);
     }
 
     private Maybe<Buffer> onHttpContent(
