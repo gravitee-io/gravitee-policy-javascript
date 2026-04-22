@@ -39,14 +39,13 @@ import io.gravitee.policy.api.PolicyResult;
 import io.gravitee.policy.javascript.JavascriptInitializer;
 import io.gravitee.policy.javascript.configuration.JavascriptPolicyConfiguration;
 import io.gravitee.reporter.api.http.Metrics;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.future.PromiseImpl;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -101,15 +100,17 @@ public class JavascriptPolicyTest {
         lenient().when(executionContext.getComponent(Vertx.class)).thenReturn(vertx);
 
         // Make sure we execute the javascript on the current thread.
-        Promise<Object> promise = new PromiseImpl<>();
         lenient()
             .doAnswer(i -> {
-                ((Handler<Promise<Object>>) i.getArgument(0)).handle(promise);
-                ((Handler<Promise<Object>>) i.getArgument(1)).handle(promise);
-                return null;
+                Callable<Object> callable = i.getArgument(0);
+                try {
+                    return Future.succeededFuture(callable.call());
+                } catch (Throwable t) {
+                    return Future.failedFuture(t);
+                }
             })
             .when(vertx)
-            .executeBlocking(any(Handler.class), any(Handler.class));
+            .executeBlocking(any(Callable.class));
     }
 
     @Test
