@@ -193,43 +193,37 @@ public class JavascriptPolicy {
 
             executionContext
                 .getComponent(Vertx.class)
-                .executeBlocking(
-                    event -> {
-                        try {
-                            scriptEvaluator.eval(script, scriptContext);
-                            event.complete();
-                        } catch (Exception e) {
-                            event.fail(e);
-                        }
-                    },
-                    event -> {
-                        if (event.failed()) {
-                            logger.error("Unable to run Javascript script", event.cause());
-                            policyChain.failWith(io.gravitee.policy.api.PolicyResult.failure(event.cause().getMessage()));
-                        } else {
-                            PolicyResult result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
+                .executeBlocking(() -> {
+                    scriptEvaluator.eval(script, scriptContext);
+                    return null;
+                })
+                .onComplete(event -> {
+                    if (event.failed()) {
+                        logger.error("Unable to run Javascript script", event.cause());
+                        policyChain.failWith(io.gravitee.policy.api.PolicyResult.failure(event.cause().getMessage()));
+                    } else {
+                        PolicyResult result = (PolicyResult) scriptContext.getAttribute(RESULT_VARIABLE_NAME);
 
-                            if (result.getState() == PolicyResult.State.SUCCESS) {
-                                policyChain.doNext(request, response);
+                        if (result.getState() == PolicyResult.State.SUCCESS) {
+                            policyChain.doNext(request, response);
+                        } else {
+                            if (result.getContentType() != null) {
+                                policyChain.failWith(
+                                    io.gravitee.policy.api.PolicyResult.failure(
+                                        result.getKey(),
+                                        result.getCode(),
+                                        result.getError(),
+                                        result.getContentType()
+                                    )
+                                );
                             } else {
-                                if (result.getContentType() != null) {
-                                    policyChain.failWith(
-                                        io.gravitee.policy.api.PolicyResult.failure(
-                                            result.getKey(),
-                                            result.getCode(),
-                                            result.getError(),
-                                            result.getContentType()
-                                        )
-                                    );
-                                } else {
-                                    policyChain.failWith(
-                                        io.gravitee.policy.api.PolicyResult.failure(result.getKey(), result.getCode(), result.getError())
-                                    );
-                                }
+                                policyChain.failWith(
+                                    io.gravitee.policy.api.PolicyResult.failure(result.getKey(), result.getCode(), result.getError())
+                                );
                             }
                         }
                     }
-                );
+                });
         }
 
         return null;

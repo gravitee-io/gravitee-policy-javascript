@@ -34,10 +34,10 @@
     </parent>
 
     <properties>
-        <gravitee-apim.version>4.8.0</gravitee-apim.version>
-        <gravitee-entrypoint-http-post.version>2.1.0</gravitee-entrypoint-http-post.version>
-        <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
-        <gravitee-reactor-message.version>7.0.0</gravitee-reactor-message.version>
+        <gravitee-apim.version>4.12.0-SNAPSHOT</gravitee-apim.version>
+        <gravitee-entrypoint-http-post.version>3.0.0</gravitee-entrypoint-http-post.version>
+        <gravitee-entrypoint-http-get.version>3.0.0</gravitee-entrypoint-http-get.version>
+        <gravitee-reactor-message.version>11.0.0-alpha.2</gravitee-reactor-message.version>
         <nashorn.version>15.7</nashorn.version>
         <publish-folder-path>graviteeio-apim/plugins/policies</publish-folder-path>
     </properties>
@@ -83,13 +83,6 @@
         <dependency>
             <groupId>io.gravitee.el</groupId>
             <artifactId>gravitee-expression-language</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.gravitee.apim.gateway</groupId>
-            <artifactId>gravitee-apim-gateway-buffer</artifactId>
-            <version>${gravitee-apim.version}</version>
             <scope>provided</scope>
         </dependency>
 
