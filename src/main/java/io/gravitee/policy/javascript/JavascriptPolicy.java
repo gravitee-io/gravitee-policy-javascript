@@ -36,12 +36,10 @@ import io.reactivex.rxjava3.core.Maybe;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.script.ScriptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
+@CustomLog
 public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.JavascriptPolicy implements HttpPolicy {
-
-    private static final Logger logger = LoggerFactory.getLogger(JavascriptPolicy.class);
 
     /**
      * @see JavascriptPolicyConfiguration#getScripts()
@@ -137,7 +135,7 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
             .evalRx(script, scriptContext)
             .ignoreElement()
             .onErrorResumeNext(e -> {
-                logger.error("An error occurred while executing Javascript script", e);
+                ctx.withLogger(log).error("An error occurred while executing Javascript script", e);
                 return ctx.interruptWith(createExecutionFailureFromThrowable(e));
             })
             .andThen(
@@ -184,7 +182,7 @@ public class JavascriptPolicy extends io.gravitee.policy.v3.javascript.Javascrip
         return scriptEvaluator
             .evalRx(script, scriptContext)
             .onErrorResumeNext(e -> {
-                logger.error("An error occurred while executing Javascript script", e);
+                ctx.withLogger(log).error("An error occurred while executing Javascript script", e);
                 return ctx.interruptBodyWith(createExecutionFailureFromThrowable(e));
             })
             .flatMap(output -> {
