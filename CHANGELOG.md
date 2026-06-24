@@ -1,3 +1,20 @@
+# [3.0.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.1.0...3.0.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* add cause to execution failure ([9bfe1f5](https://github.com/gravitee-io/gravitee-policy-javascript/commit/9bfe1f56a0659e7ffdc9a3247d9b17d191bf1d28))
+
+
+### Features
+
+* upgrade to vertx 5 ([7c65dd0](https://github.com/gravitee-io/gravitee-policy-javascript/commit/7c65dd0538a3f41fdacde1ce543f7b22c0031ff7))
+
+
+### BREAKING CHANGES
+
+* upgrade to vertx 5.x
+
 # [2.1.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.0.0...2.1.0) (2026-02-19)
 
 
