@@ -37,8 +37,8 @@
             },
             "gioConfig": {
                 "banner": {
-                    "title": "Script",
-                    "text": "For v4 HTTP APIs created with the JavaScript policy (<= 1.4.0), onRequestScript and onResponseScript still run but are deprecated and not available in the UI. Migrate them to the unified script property — see the documentation for guidance."
+                    "title": "Deprecated policy",
+                    "text": "This policy is deprecated in favour of the <b>JavaScript</b> policy (<code>js</code>), which runs on GraalJS instead of Nashorn. Existing APIs keep working and no removal date is announced, but new APIs should use it. The two policies do not share an engine, so scripts may need adjustments.<br><br>For v4 HTTP APIs created with the JavaScript policy (<= 1.4.0), onRequestScript and onResponseScript still run but are deprecated and not available in the UI. Migrate them to the unified script property — see the documentation for guidance."
                 }
             }
         },
