@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/3.0.0...3.1.0) (2026-08-03)
+
+
+### Features
+
+* warn about deprecation in the policy configuration form ([766e187](https://github.com/gravitee-io/gravitee-policy-javascript/commit/766e187baa3935f7276f96593020f4df4297abe8))
+
 # [3.0.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/2.1.0...3.0.0) (2026-06-24)
 
 
