@@ -587,6 +587,13 @@ spec:
 
 ## Changelog
 
+#### [3.1.1](https://github.com/gravitee-io/gravitee-policy-javascript/compare/3.1.0...3.1.1) (2026-08-03)
+
+
+##### Bug Fixes
+
+* **deps:** update gravitee-apim.version to v4.12.13 ([0cf2bb5](https://github.com/gravitee-io/gravitee-policy-javascript/commit/0cf2bb5b95757e0a02200749f711539bb7089ffc))
+
 ### [3.1.0](https://github.com/gravitee-io/gravitee-policy-javascript/compare/3.0.0...3.1.0) (2026-08-03)
 
 
